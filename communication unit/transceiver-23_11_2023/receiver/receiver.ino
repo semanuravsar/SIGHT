@@ -31,6 +31,9 @@ void count_IR(){
       if(received_val + inverted_received_val == 255){
         Serial.println(received_val);
       }
+      else{
+        Serial.println("Corrupted Data");
+      }
     
   }
 
