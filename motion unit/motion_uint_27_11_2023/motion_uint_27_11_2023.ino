@@ -1,5 +1,6 @@
-
-
+#define right_offset 0
+#define max_pwm 70
+#define motion_duration 3500
 void setup() {
   pinMode(8, OUTPUT);   //IN2
   pinMode(9, OUTPUT);   //IN1
@@ -12,37 +13,42 @@ void setup() {
 void loop() {
 
   //forward motion
-  for (int i = 25; i < 80; i++) {
-    right_forward(i);
+  for (int i = 25; i < max_pwm; i++) {
+    right_forward(i + right_offset);
     left_forward(i);
-    delay(30);
+    delay(40);
   }
-  delay(1500);
-  for (int i = 80; i > 0; i--) {
+  delay(motion_duration);
+  for (int i = max_pwm; i > 0; i--) {
     right_forward(i);
     left_forward(i);
     delay(10);
   }
 
+  delay(2500);
+
   // Backward motion
-  for (int i = 25; i < 125; i++) {
-    right_backward(i);
+  for (int i = 25; i < max_pwm; i++) {
+    right_backward(i + right_offset);
     left_backward(i);
-    delay(30);
+    delay(40);
   }
-  delay(1500);
-  for (int i = 125; i > 0; i--) {
+  delay(motion_duration);
+  for (int i = max_pwm; i > 0; i--) {
     right_backward(i);
     left_backward(i);
     delay(10);
   }
+
+  delay(2500);
+
   // rotate around itself
-  for (int i = 25; i < 80; i++) {
-    right_forward(i);
+  for (int i = 25; i < max_pwm; i++) {
+    right_forward(i + right_offset);
     left_backward(i);
     delay(30);
   }
-  for (int i = 80; i > 0; i--) {
+  for (int i = max_pwm; i > 0; i--) {
     right_forward(i);
     left_backward(i);
     delay(30);
