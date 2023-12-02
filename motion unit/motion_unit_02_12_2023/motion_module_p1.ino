@@ -8,11 +8,11 @@
 #define voltage_reading_pin A0
 
 //Global variables
-const int MOTOR_RATED_VOLTAGE = 5;     //by default  [volt]
-float BATTERY_VOLTAGE = 6;             //by default  [volt]
-int MAX_PWM_ALLOWED = 255;             //by default  [0,255]
-unsigned int PWM_STEP_SIZE = 1;        //by default  [0,255]
-unsigned int PWM_UPDATE_PERIOD = 20;  //by default  [miliseconds]
+const int MOTOR_RATED_VOLTAGE = 5;    //by default  [volt]
+float BATTERY_VOLTAGE = 6;            //by default  [volt]
+int MAX_PWM_ALLOWED = 255;            //by default  [0,255]
+unsigned int PWM_STEP_SIZE = 1;       //by default  [0,255]
+unsigned int PWM_UPDATE_PERIOD = 50;  //by default  [miliseconds]
 
 //=================================================
 void initialize_motor_module() {
@@ -32,7 +32,7 @@ void initialize_motor_module() {
   pinMode(en_34, OUTPUT);
   pinMode(voltage_reading_pin, INPUT);
 
-  set_max_pwm_allowed();
+  calculate_max_pwm_allowed();
 
   delay(100);  // While not strictly necessary, it's considered good practice to include this delay after initialization.
 }
@@ -49,9 +49,10 @@ void haltMotorModule() {
 int get_max_pwm_allowed() {
   return MAX_PWM_ALLOWED;
 }
-int set_max_pwm_allowed() {
+
+int calculate_max_pwm_allowed() {
   MAX_PWM_ALLOWED = floor((MOTOR_RATED_VOLTAGE / BATTERY_VOLTAGE) * 255);  //do not use round because it may round 255.X to 256. Which is not expected by the analog write
-  MAX_PWM_ALLOWED = min(MAX_PWM_ALLOWED ,255);
+  MAX_PWM_ALLOWED = min(MAX_PWM_ALLOWED, 255);
 }
 
 void drive_right_motor(int pwm_aimed) {
@@ -71,24 +72,23 @@ void drive_right_motor(int pwm_aimed) {
       pwm_current -= min(PWM_STEP_SIZE, abs(pwm_difference));
     }
     Serial.println(pwm_current);
+
     // drive right motor =======================================
     if ((pwm_aimed < -MAX_PWM_ALLOWED) || (MAX_PWM_ALLOWED < pwm_aimed)) {
       // If the index exceeds the expected range, it's a critical error. Users of this function must ensure the input falls within the range of [-MAX_PWM_ALLOWED, MAX_PWM_ALLOWED] and is an integer.
       // In case of an error, the algorithm is halted, and the built-in LED blinks a message in Morse code to notify the user :)
-      for (int i = 0; i < 1000; i++) {
-        haltMotorModule();      //TODO: When combined with other modules, this function should stop all other modules to
-        stopped_heart_sound();  // "HELP" in morse code :)
+      while (true) {
+        haltMotorModule();      // TODO: When combined with other modules, this function should stop all other modules to
+        stopped_heart_sound();  // Annoying heart beat sound
       }
     } else if ((0 <= pwm_current) && (pwm_current <= MAX_PWM_ALLOWED)) {
       // forward motion
-      Serial.println("forward");
       digitalWrite(in_1, HIGH);
       digitalWrite(in_2, LOW);
       analogWrite(en_12, pwm_current);
 
     } else if ((-MAX_PWM_ALLOWED <= pwm_current) && (pwm_current < 0)) {
       // "backward motion
-      Serial.println("backward");
       digitalWrite(in_1, LOW);
       digitalWrite(in_2, HIGH);
       analogWrite(en_12, -pwm_current);
@@ -98,14 +98,59 @@ void drive_right_motor(int pwm_aimed) {
     updateTime = currentTime;
   }
 }
+
+void drive_left_motor(int pwm_aimed) {
+  static int pwm_current = 0;
+  static unsigned long updateTime = 0;
+
+  unsigned long currentTime = millis();                  // Get the current time since the arduino starts in miliseconds
+  unsigned long elapsedTime = currentTime - updateTime;  // Calculate elapsed time in miliseconds
+  if (elapsedTime >= PWM_UPDATE_PERIOD) {
+
+    // Update pwm current ======================================
+    int pwm_difference = pwm_aimed - pwm_current;
+    uint8_t pwm_change = 0;
+    if (pwm_difference > 0) {  //increase PWM
+      pwm_current += min(PWM_STEP_SIZE, pwm_difference);
+    } else if (pwm_difference < 0) {  //decrease PWM
+      pwm_current -= min(PWM_STEP_SIZE, abs(pwm_difference));
+    }
+    Serial.println(pwm_current);
+
+    // drive right motor =======================================
+    if ((pwm_aimed < -MAX_PWM_ALLOWED) || (MAX_PWM_ALLOWED < pwm_aimed)) {
+      // If the index exceeds the expected range, it's a critical error. Users of this function must ensure the input falls within the range of [-MAX_PWM_ALLOWED, MAX_PWM_ALLOWED] and is an integer.
+      // In case of an error, the algorithm is halted, and the built-in LED blinks a message in Morse code to notify the user :)
+      while (true) {
+        haltMotorModule();      // TODO: When combined with other modules, this function should stop all other modules to
+        stopped_heart_sound();  // Annoying heart beat sound
+      }
+    } else if ((0 <= pwm_current) && (pwm_current <= MAX_PWM_ALLOWED)) {
+      // forward motion
+      digitalWrite(in_4, HIGH);
+      digitalWrite(in_3, LOW);
+      analogWrite(en_34, pwm_current);
+
+    } else if ((-MAX_PWM_ALLOWED <= pwm_current) && (pwm_current < 0)) {
+      // "backward motion
+      digitalWrite(in_4, LOW);
+      digitalWrite(in_3, HIGH);
+      analogWrite(en_34, -pwm_current);
+    }
+
+    //update the updateTime
+    updateTime = currentTime;
+  }
+}
+
 void stopped_heart_sound() {
   const int dotDelay = 40;  // Time for a dot in milliseconds
   const int silenceDelay = dotDelay / 5;
   const int wordDelay = 80 * dotDelay;  // Time between words is 7 times the dot delay
 
   // Define arrays to store the durations of sounds and silences
-  const int soundDurations[] = {   7, 3, 7, 3, 5, 3, 5, 3, 5, 2, 4, 2, 4, 2, 4, 2, 4, 2, 40 };
-  const int silenceDurations[] = {  4, 4, 3, 3, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 10, 1 };
+  const int soundDurations[] = { 7, 3, 7, 3, 5, 3, 5, 3, 5, 2, 4, 2, 4, 2, 4, 2, 4, 2, 40 };
+  const int silenceDurations[] = { 4, 4, 3, 3, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 10, 1 };
 
   for (int i = 0; i < sizeof(soundDurations) / sizeof(soundDurations[0]); i++) {
     digitalWrite(builtin_LED, HIGH);
@@ -145,7 +190,7 @@ void test_measure_battery_voltage(float reduction_ratio) {
   Serial.println("Actual battery voltage is: " + String(actual_voltage) + " V");
 }
 
-int test_set_max_pwm_allowed(float battery_voltage) {
+int test_calculate_max_pwm_allowed(float battery_voltage) {
   float motor_rated_voltage = 6;
   int max_pwm_allowed = 0;
   if (battery_voltage > 0) {
@@ -168,7 +213,7 @@ void test_motor_wo_delay() {
   int deltaT = 25;
 
   int battery_voltage = 6;
-  float rated_pwm_max = test_set_max_pwm_allowed(battery_voltage);
+  float rated_pwm_max = test_calculate_max_pwm_allowed(battery_voltage);
 
   unsigned long currentTime = millis();                  // Get the current time
   unsigned long elapsedTime = currentTime - updateTime;  // Calculate elapsed time
@@ -204,7 +249,7 @@ void test_motor() {
   int deltaT = 25;
   int battery_voltage = 12;
 
-  float rated_pwm_max = test_set_max_pwm_allowed(battery_voltage);
+  float rated_pwm_max = test_calculate_max_pwm_allowed(battery_voltage);
 
   int current_pwm = pwm_i;
   Serial.println("\ntesting starts");
@@ -272,12 +317,12 @@ void test_drive_left_motor(int pwm_val, int max_pwm_allowed) {
   }
 }
 
-// void test_H_bridge_fully_on() {
-//   digitalWrite(in_3, LOW);
-//   digitalWrite(in_4, HIGH);
-//   digitalWrite(en_34, HIGH);
+void test_H_bridge_fully_on() {
+  digitalWrite(in_3, LOW);
+  digitalWrite(in_4, HIGH);
+  digitalWrite(en_34, HIGH);
 
-//   digitalWrite(in_1, LOW);
-//   digitalWrite(in_2, HIGH);
-//   digitalWrite(en_12, HIGH);
-// }
+  digitalWrite(in_1, LOW);
+  digitalWrite(in_2, HIGH);
+  digitalWrite(en_12, HIGH);
+}
