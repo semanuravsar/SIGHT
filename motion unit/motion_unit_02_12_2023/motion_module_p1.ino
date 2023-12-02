@@ -8,10 +8,9 @@
 #define battery_voltage_pin A0
 
 //Global variables
-unsigned long startTime;
-const int motor_rated_voltage = 6;
+const int MOTOR_RATED_VOLTAGE = 6;
+float BATTERY_VOLTAGE = 6;  //by default
 int MAX_PWM_ALLOWED = 255;  //by default
-float BATTERY_VOLTAGE = 5;  //by default
 
 //=================================================
 void initialize_motor_pins() {
@@ -31,6 +30,74 @@ void initialize_motor_pins() {
   pinMode(battery_voltage_pin, INPUT);
   delay(1000);
 }
+
+int set_max_pwm_allowed() {
+  MAX_PWM_ALLOWED = floor((MOTOR_RATED_VOLTAGE / BATTERY_VOLTAGE) * 255);  //do not use round because it may round 255.X to 256. Which is not expected by the analog write
+}
+
+void drive_right_motor(int pwm_aimed) {
+  static int pwm_current = 0;
+  static unsigned long updateTime = 0;
+  int step_size = 1;
+  int deltaT = 1000;
+
+  int battery_voltage = 6;
+  set_max_pwm_allowed();
+
+  unsigned long currentTime = millis();                  // Get the current time
+  unsigned long elapsedTime = currentTime - updateTime;  // Calculate elapsed time
+
+  if (elapsedTime >= deltaT) {
+    int pwm_difference = pwm_aimed - pwm_current;
+    if (pwm_difference > 0) {  //increase PWM
+      pwm_current += min(step_size, pwm_difference);
+    } else if (pwm_difference < 0) {  //decrease PWM
+      pwm_current -= min(step_size, abs(pwm_difference));
+    }
+
+    // drive right motor
+    if ((0 <= pwm_current) && (pwm_current <= MAX_PWM_ALLOWED)) {
+      digitalWrite(in_1, HIGH);
+      digitalWrite(in_2, LOW);
+      analogWrite(en_12, pwm_current);
+      // forward motion
+    } else if ((-MAX_PWM_ALLOWED <= pwm_current) && (pwm_current < 0)) {
+      digitalWrite(in_1, LOW);
+      digitalWrite(in_2, HIGH);
+      analogWrite(en_12, -pwm_current);
+      // "backward motion
+    } else {
+      digitalWrite(in_1, LOW);
+      digitalWrite(in_2, LOW);
+      analogWrite(en_12, 0);
+      // "index exceeded expected range, stop the motor!
+    }
+
+    //update the updateTime
+    updateTime = elapsedTime;
+  }
+}
+
+//=================================================
+
+void test_initialize_motor_pins() {
+  pinMode(builtin_LED, OUTPUT);
+  for (uint8_t i = 0; i < 4; i++) {
+    digitalWrite(builtin_LED, HIGH);
+    delay(250);
+    digitalWrite(builtin_LED, LOW);
+    delay(250);
+  }
+  pinMode(in_1, OUTPUT);
+  pinMode(in_2, OUTPUT);
+  pinMode(en_12, OUTPUT);
+  pinMode(in_3, OUTPUT);
+  pinMode(in_4, OUTPUT);
+  pinMode(en_34, OUTPUT);
+  pinMode(battery_voltage_pin, INPUT);
+  delay(1000);
+}
+
 void test_measure_battery_voltage(float reduction_ratio) {
   Serial.println("\nreading battery voltage with reduction ratio of: " + String(reduction_ratio));
   int reading = analogRead(battery_voltage_pin);
@@ -40,6 +107,7 @@ void test_measure_battery_voltage(float reduction_ratio) {
 }
 
 int test_set_max_pwm_allowed(float battery_voltage) {
+  float motor_rated_voltage = 6;
   int max_pwm_allowed = 0;
   if (battery_voltage > 0) {
     Serial.println("\n Calculating max-pwm allowed for battery voltage of " + String(battery_voltage));
@@ -52,26 +120,42 @@ int test_set_max_pwm_allowed(float battery_voltage) {
 }
 
 void test_motor_wo_delay() {
-  int pwm_i = 0;
-  int step_size = 1;
-  int pwm_aimed = 256;
+  static int step_size = 1;
+  static int pwm_current = 0;
+  static int pwm_aimed = 255;
+  static unsigned long updateTime = 0;
+  static int direction_flag = 1;  //1 forward, 0 backward
+
   int deltaT = 25;
 
-  int battery_voltage = 12;
+  int battery_voltage = 6;
   float rated_pwm_max = test_set_max_pwm_allowed(battery_voltage);
 
-  unsigned long currentTime = millis();                 // Get the current time
-  unsigned long elapsedTime = currentTime - startTime;  // Calculate elapsed time
-  if (elapsedTime - updateTime == deltaT) {
-    if (current_pwm + step_size){
+  unsigned long currentTime = millis();                  // Get the current time
+  unsigned long elapsedTime = currentTime - updateTime;  // Calculate elapsed time
+  if (elapsedTime >= deltaT) {
 
+    int pwm_difference = pwm_aimed - pwm_current;
+    if (pwm_difference > 0) {  //increase PWM
+      pwm_current += min(step_size, pwm_difference);
+    } else if (pwm_difference < 0) {  //decrease PWM
+      pwm_current -= min(step_size, abs(pwm_difference));
+    } else {
+      if (direction_flag == 1) {
+        pwm_aimed = -255;
+        direction_flag = 0;
+      } else {
+        pwm_aimed = 255;
+        direction_flag = 1;
+      }
     }
-    current_pwm = current_pwm + step_size
-    test_drive_right_motor(current_pwm, rated_pwm_max);
-    test_drive_left_motor(current_pwm, rated_pwm_max);
-    updateTime = elapsedTime
+
+    test_drive_right_motor(pwm_current, rated_pwm_max);
+    test_drive_left_motor(pwm_current, rated_pwm_max);
+    updateTime = elapsedTime;
   }
 }
+
 void test_motor() {
   delay(5000);
   int pwm_i = 0;
@@ -147,4 +231,14 @@ void test_drive_left_motor(int pwm_val, int max_pwm_allowed) {
     analogWrite(en_34, 0);
     Serial.println("index exceeded expected range, stop the motor!");
   }
+}
+
+void test_H_bridge_fully_on() {
+  digitalWrite(in_3, LOW);
+  digitalWrite(in_4, HIGH);
+  digitalWrite(en_34, HIGH);
+
+  digitalWrite(in_1, LOW);
+  digitalWrite(in_2, HIGH);
+  digitalWrite(en_12, HIGH);
 }
