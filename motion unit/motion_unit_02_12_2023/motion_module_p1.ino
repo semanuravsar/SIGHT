@@ -12,13 +12,13 @@ const int MOTOR_RATED_VOLTAGE = 5;     //by default  [volt]
 float BATTERY_VOLTAGE = 6;             //by default  [volt]
 int MAX_PWM_ALLOWED = 255;             //by default  [0,255]
 unsigned int PWM_STEP_SIZE = 1;        //by default  [0,255]
-unsigned int PWM_UPDATE_PERIOD = 250;  //by default  [miliseconds]
+unsigned int PWM_UPDATE_PERIOD = 20;  //by default  [miliseconds]
 
 //=================================================
 void initialize_motor_module() {
   //The LED blinking is put here so that we can detect reboots. May be removed in the future.
   pinMode(builtin_LED, OUTPUT);
-  for (uint8_t i = 0; i < 10; i++) {
+  for (uint8_t i = 0; i < 0; i++) {
     digitalWrite(builtin_LED, HIGH);
     delay(100);
     digitalWrite(builtin_LED, LOW);
@@ -51,6 +51,7 @@ int get_max_pwm_allowed() {
 }
 int set_max_pwm_allowed() {
   MAX_PWM_ALLOWED = floor((MOTOR_RATED_VOLTAGE / BATTERY_VOLTAGE) * 255);  //do not use round because it may round 255.X to 256. Which is not expected by the analog write
+  MAX_PWM_ALLOWED = min(MAX_PWM_ALLOWED ,255);
 }
 
 void drive_right_motor(int pwm_aimed) {
@@ -65,18 +66,18 @@ void drive_right_motor(int pwm_aimed) {
     int pwm_difference = pwm_aimed - pwm_current;
     uint8_t pwm_change = 0;
     if (pwm_difference > 0) {  //increase PWM
-      pwm_current = min(PWM_STEP_SIZE, pwm_difference);
+      pwm_current += min(PWM_STEP_SIZE, pwm_difference);
     } else if (pwm_difference < 0) {  //decrease PWM
       pwm_current -= min(PWM_STEP_SIZE, abs(pwm_difference));
     }
-
+    Serial.println(pwm_current);
     // drive right motor =======================================
     if ((pwm_aimed < -MAX_PWM_ALLOWED) || (MAX_PWM_ALLOWED < pwm_aimed)) {
       // If the index exceeds the expected range, it's a critical error. Users of this function must ensure the input falls within the range of [-MAX_PWM_ALLOWED, MAX_PWM_ALLOWED] and is an integer.
       // In case of an error, the algorithm is halted, and the built-in LED blinks a message in Morse code to notify the user :)
       for (int i = 0; i < 1000; i++) {
-        haltMotorModule();  //TODO: When combined with other modules, this function should stop all other modules to
-        stopped_hearth_sound();   // "HELP" in morse code :)
+        haltMotorModule();      //TODO: When combined with other modules, this function should stop all other modules to
+        stopped_heart_sound();  // "HELP" in morse code :)
       }
     } else if ((0 <= pwm_current) && (pwm_current <= MAX_PWM_ALLOWED)) {
       // forward motion
@@ -97,26 +98,25 @@ void drive_right_motor(int pwm_aimed) {
     updateTime = currentTime;
   }
 }
-void stopped_hearth_sound() {
-  const int dotDelay = 90;  // Time for a dot in milliseconds
+void stopped_heart_sound() {
+  const int dotDelay = 40;  // Time for a dot in milliseconds
   const int silenceDelay = dotDelay / 5;
-  const int wordDelay = 10 * dotDelay;  // Time between words is 7 times the dot delay
+  const int wordDelay = 80 * dotDelay;  // Time between words is 7 times the dot delay
 
   // Define arrays to store the durations of sounds and silences
-  const int soundDurations[] = { 3 * dotDelay, 1 * dotDelay, 3 * dotDelay, 1 * dotDelay,  3 * dotDelay,1 * dotDelay, 30 * dotDelay };
-  const int silenceDurations[] = { 5 * dotDelay, 5 * dotDelay, 5 * dotDelay, 5 * dotDelay, 5*dotDelay, 5 * dotDelay,5 * dotDelay };
+  const int soundDurations[] = {   7, 3, 7, 3, 5, 3, 5, 3, 5, 2, 4, 2, 4, 2, 4, 2, 4, 2, 40 };
+  const int silenceDurations[] = {  4, 4, 3, 3, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 10, 1 };
 
-  for (int i = 0; i < 7; i++) {  // Loop through the hardcoded Morse code pattern
+  for (int i = 0; i < sizeof(soundDurations) / sizeof(soundDurations[0]); i++) {
     digitalWrite(builtin_LED, HIGH);
-    delay(soundDurations[i]);
+    delay(soundDurations[i] * dotDelay);
     digitalWrite(builtin_LED, LOW);
-    delay(silenceDurations[i]);
-
-    delay(silenceDelay);  // Time between dots and dashes within the same letter
+    delay(silenceDurations[i] * dotDelay);
   }
 
   delay(wordDelay);  // Time between words
 }
+
 //=================================================
 
 void test_initialize_motor_pins() {
@@ -272,12 +272,12 @@ void test_drive_left_motor(int pwm_val, int max_pwm_allowed) {
   }
 }
 
-void test_H_bridge_fully_on() {
-  digitalWrite(in_3, LOW);
-  digitalWrite(in_4, HIGH);
-  digitalWrite(en_34, HIGH);
+// void test_H_bridge_fully_on() {
+//   digitalWrite(in_3, LOW);
+//   digitalWrite(in_4, HIGH);
+//   digitalWrite(en_34, HIGH);
 
-  digitalWrite(in_1, LOW);
-  digitalWrite(in_2, HIGH);
-  digitalWrite(en_12, HIGH);
-}
+//   digitalWrite(in_1, LOW);
+//   digitalWrite(in_2, HIGH);
+//   digitalWrite(en_12, HIGH);
+// }
