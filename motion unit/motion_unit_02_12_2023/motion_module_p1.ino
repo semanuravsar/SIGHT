@@ -5,21 +5,24 @@
 #define in_4 7    //IN4
 #define en_34 11  //Enable Pin (IN3 & IN4)
 #define builtin_LED 13
-#define battery_voltage_pin A0
+#define voltage_reading_pin A0
 
 //Global variables
-const int MOTOR_RATED_VOLTAGE = 6;
-float BATTERY_VOLTAGE = 6;  //by default
-int MAX_PWM_ALLOWED = 255;  //by default
+const int MOTOR_RATED_VOLTAGE = 5;     //by default  [volt]
+float BATTERY_VOLTAGE = 6;             //by default  [volt]
+int MAX_PWM_ALLOWED = 255;             //by default  [0,255]
+unsigned int PWM_STEP_SIZE = 1;        //by default  [0,255]
+unsigned int PWM_UPDATE_PERIOD = 250;  //by default  [miliseconds]
 
 //=================================================
-void initialize_motor_pins() {
+void initialize_motor_module() {
+  //The LED blinking is put here so that we can detect reboots. May be removed in the future.
   pinMode(builtin_LED, OUTPUT);
-  for (uint8_t i = 0; i < 4; i++) {
+  for (uint8_t i = 0; i < 10; i++) {
     digitalWrite(builtin_LED, HIGH);
-    delay(250);
+    delay(100);
     digitalWrite(builtin_LED, LOW);
-    delay(250);
+    delay(100);
   }
   pinMode(in_1, OUTPUT);
   pinMode(in_2, OUTPUT);
@@ -27,10 +30,25 @@ void initialize_motor_pins() {
   pinMode(in_3, OUTPUT);
   pinMode(in_4, OUTPUT);
   pinMode(en_34, OUTPUT);
-  pinMode(battery_voltage_pin, INPUT);
-  delay(1000);
+  pinMode(voltage_reading_pin, INPUT);
+
+  set_max_pwm_allowed();
+
+  delay(100);  // While not strictly necessary, it's considered good practice to include this delay after initialization.
 }
 
+void haltMotorModule() {
+  digitalWrite(in_1, LOW);
+  digitalWrite(in_2, LOW);
+  digitalWrite(en_12, LOW);
+  digitalWrite(in_3, LOW);
+  digitalWrite(in_4, LOW);
+  digitalWrite(en_34, LOW);
+}
+
+int get_max_pwm_allowed() {
+  return MAX_PWM_ALLOWED;
+}
 int set_max_pwm_allowed() {
   MAX_PWM_ALLOWED = floor((MOTOR_RATED_VOLTAGE / BATTERY_VOLTAGE) * 255);  //do not use round because it may round 255.X to 256. Which is not expected by the analog write
 }
@@ -38,46 +56,67 @@ int set_max_pwm_allowed() {
 void drive_right_motor(int pwm_aimed) {
   static int pwm_current = 0;
   static unsigned long updateTime = 0;
-  int step_size = 1;
-  int deltaT = 1000;
 
-  int battery_voltage = 6;
-  set_max_pwm_allowed();
+  unsigned long currentTime = millis();                  // Get the current time since the arduino starts in miliseconds
+  unsigned long elapsedTime = currentTime - updateTime;  // Calculate elapsed time in miliseconds
+  if (elapsedTime >= PWM_UPDATE_PERIOD) {
 
-  unsigned long currentTime = millis();                  // Get the current time
-  unsigned long elapsedTime = currentTime - updateTime;  // Calculate elapsed time
-
-  if (elapsedTime >= deltaT) {
+    // Update pwm current ======================================
     int pwm_difference = pwm_aimed - pwm_current;
+    uint8_t pwm_change = 0;
     if (pwm_difference > 0) {  //increase PWM
-      pwm_current += min(step_size, pwm_difference);
+      pwm_current = min(PWM_STEP_SIZE, pwm_difference);
     } else if (pwm_difference < 0) {  //decrease PWM
-      pwm_current -= min(step_size, abs(pwm_difference));
+      pwm_current -= min(PWM_STEP_SIZE, abs(pwm_difference));
     }
 
-    // drive right motor
-    if ((0 <= pwm_current) && (pwm_current <= MAX_PWM_ALLOWED)) {
+    // drive right motor =======================================
+    if ((pwm_aimed < -MAX_PWM_ALLOWED) || (MAX_PWM_ALLOWED < pwm_aimed)) {
+      // If the index exceeds the expected range, it's a critical error. Users of this function must ensure the input falls within the range of [-MAX_PWM_ALLOWED, MAX_PWM_ALLOWED] and is an integer.
+      // In case of an error, the algorithm is halted, and the built-in LED blinks a message in Morse code to notify the user :)
+      for (int i = 0; i < 1000; i++) {
+        haltMotorModule();  //TODO: When combined with other modules, this function should stop all other modules to
+        stopped_hearth_sound();   // "HELP" in morse code :)
+      }
+    } else if ((0 <= pwm_current) && (pwm_current <= MAX_PWM_ALLOWED)) {
+      // forward motion
+      Serial.println("forward");
       digitalWrite(in_1, HIGH);
       digitalWrite(in_2, LOW);
       analogWrite(en_12, pwm_current);
-      // forward motion
+
     } else if ((-MAX_PWM_ALLOWED <= pwm_current) && (pwm_current < 0)) {
+      // "backward motion
+      Serial.println("backward");
       digitalWrite(in_1, LOW);
       digitalWrite(in_2, HIGH);
       analogWrite(en_12, -pwm_current);
-      // "backward motion
-    } else {
-      digitalWrite(in_1, LOW);
-      digitalWrite(in_2, LOW);
-      analogWrite(en_12, 0);
-      // "index exceeded expected range, stop the motor!
     }
 
     //update the updateTime
-    updateTime = elapsedTime;
+    updateTime = currentTime;
   }
 }
+void stopped_hearth_sound() {
+  const int dotDelay = 90;  // Time for a dot in milliseconds
+  const int silenceDelay = dotDelay / 5;
+  const int wordDelay = 10 * dotDelay;  // Time between words is 7 times the dot delay
 
+  // Define arrays to store the durations of sounds and silences
+  const int soundDurations[] = { 3 * dotDelay, 1 * dotDelay, 3 * dotDelay, 1 * dotDelay,  3 * dotDelay,1 * dotDelay, 30 * dotDelay };
+  const int silenceDurations[] = { 5 * dotDelay, 5 * dotDelay, 5 * dotDelay, 5 * dotDelay, 5*dotDelay, 5 * dotDelay,5 * dotDelay };
+
+  for (int i = 0; i < 7; i++) {  // Loop through the hardcoded Morse code pattern
+    digitalWrite(builtin_LED, HIGH);
+    delay(soundDurations[i]);
+    digitalWrite(builtin_LED, LOW);
+    delay(silenceDurations[i]);
+
+    delay(silenceDelay);  // Time between dots and dashes within the same letter
+  }
+
+  delay(wordDelay);  // Time between words
+}
 //=================================================
 
 void test_initialize_motor_pins() {
@@ -94,13 +133,13 @@ void test_initialize_motor_pins() {
   pinMode(in_3, OUTPUT);
   pinMode(in_4, OUTPUT);
   pinMode(en_34, OUTPUT);
-  pinMode(battery_voltage_pin, INPUT);
+  pinMode(voltage_reading_pin, INPUT);
   delay(1000);
 }
 
 void test_measure_battery_voltage(float reduction_ratio) {
   Serial.println("\nreading battery voltage with reduction ratio of: " + String(reduction_ratio));
-  int reading = analogRead(battery_voltage_pin);
+  int reading = analogRead(voltage_reading_pin);
   Serial.println("reading is: " + String(reading) + " / 1023");
   float actual_voltage = (5.0 * reading / 1024.0) / reduction_ratio;
   Serial.println("Actual battery voltage is: " + String(actual_voltage) + " V");
