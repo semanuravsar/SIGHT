@@ -8,6 +8,7 @@
 #define battery_voltage_pin A0
 
 //Global variables
+unsigned long startTime;
 const int motor_rated_voltage = 6;
 int MAX_PWM_ALLOWED = 255;  //by default
 float BATTERY_VOLTAGE = 5;  //by default
@@ -48,6 +49,28 @@ int test_set_max_pwm_allowed(float battery_voltage) {
     Serial.println("\n Could not calculate max-pwm allowed for battery voltage of " + String(battery_voltage));
   }
   return max_pwm_allowed;
+}
+
+void test_motor_wo_delay() {
+  int pwm_i = 0;
+  int step_size = 1;
+  int pwm_aimed = 256;
+  int deltaT = 25;
+
+  int battery_voltage = 12;
+  float rated_pwm_max = test_set_max_pwm_allowed(battery_voltage);
+
+  unsigned long currentTime = millis();                 // Get the current time
+  unsigned long elapsedTime = currentTime - startTime;  // Calculate elapsed time
+  if (elapsedTime - updateTime == deltaT) {
+    if (current_pwm + step_size){
+
+    }
+    current_pwm = current_pwm + step_size
+    test_drive_right_motor(current_pwm, rated_pwm_max);
+    test_drive_left_motor(current_pwm, rated_pwm_max);
+    updateTime = elapsedTime
+  }
 }
 void test_motor() {
   delay(5000);
