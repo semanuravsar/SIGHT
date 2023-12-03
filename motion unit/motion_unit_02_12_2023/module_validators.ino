@@ -1,4 +1,5 @@
 // IMPORTANT: Comment out unused validators to minimize memory usage, especially when dealing with memory-intensive text-heavy components. Excessive static text can lead to memory issues.
+// There is no need to comment the validators in this file also. If they are not called as functions in the loop, the IDE automatically ignores them.
 
 //===============MOTION MODULE VALIDATOR=======================
 // The following function executes all of the final functions of the motion module.

@@ -6,7 +6,7 @@ initialize_motor_module();
 }
 
 void loop() {
-  validator_validate_motion_module();
+  //validator_validate_motion_module();
 }
 
 
