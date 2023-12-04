@@ -1,4 +1,3 @@
-#define IR_LED 5
 
 void setup() {
   Serial.begin(115200);
@@ -9,9 +8,16 @@ void setup() {
 
 uint8_t a = 0;
 void loop() {
-  transmit_preamble();
-  transmit_zero();
-  transmit_one();
-  transmit_trigger();
-  delay(10);
+  // transmit_preamble();
+  // transmit_one();
+  // transmit_zero();
+  // transmit_one();
+  // transmit_zero();
+  // transmit_one();
+  // transmit_zero();  
+  // transmit_trigger();
+  // delay(100);
+
+
+  receive_broadcast();
 }
