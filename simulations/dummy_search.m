@@ -19,8 +19,8 @@ target_col=targetLocation(2);
 
 
 num1 =randi([1 4]); % random number decide which way to move for mu1
-num2 =randi([1 4]); % random number decide which way to move for mu1
-num3 =randi([1 4]); % random number decide which way to move for mu1
+num2 =randi([1 4]); % random number decide which way to move for mu2
+num3 =randi([1 4]); % random number decide which way to move for mu3
 
 numberofiterations=100;
 
@@ -112,7 +112,7 @@ end
 end
 
 %Simulate the locations of mu's during whole time
-%robotSimulation(mu1_all,mu2_all,mu3_all,bu,targetLocation,numberofiterations)
+robotSimulation(mu1_all,mu2_all,mu3_all,bu,targetLocation,numberofiterations)
 
 
 
