@@ -1,37 +1,54 @@
 #define IR_RECEIVE_PIN 3
 #define IR_LED 5
-#define HALF_PERIOD_US 700
-#define NUMBER_OF_PACKAGE_BITS 16
-#define NUMBER_OF_PACKAGE_BITS_WO_CHECK 8
+#define HALF_PERIOD_US 600
+#define NUMBER_OF_PACKAGE_BITS 20
+#define NUMBER_OF_PACKAGE_BITS_WO_CHECK 10
 
-void send_IR(uint8_t);
+uint8_t IR_module_buffer[NUMBER_OF_PACKAGE_BITS];  //0:LSB, (NUMBER_OF_PACKAGE_BITS_WO_CHECK-1):MSB
+uint8_t IR_module_buffer_status = 0;               //0: Floating, 1:Set, 2:Received, 3: Sent
 
 void initialize_IR_module() {
   pinMode(IR_RECEIVE_PIN, INPUT);
   pinMode(IR_LED, OUTPUT);
 }
 
+void set_IR_module_buffer(uint8_t index, uint8_t value) {
+  if (value > 1) {
+    return;  //TODO: throw error
+  }
+  IR_module_buffer[index] = value;
+  IR_module_buffer_status = 1;
+}
+
+uint8_t get_IR_module_buffer(uint8_t index) {
+  return IR_module_buffer[index];
+}
+
+uint8_t get_IR_module_buffer_status() {
+  return IR_module_buffer_status;
+}
+
 void receive_package_if_possible() {
   if (0 == digitalRead(IR_RECEIVE_PIN)) {
     delayMicroseconds(3 * HALF_PERIOD_US);
-    uint8_t data_buffer[NUMBER_OF_PACKAGE_BITS];  //0:LSB, 7:MSB
+    uint8_t data_buffer[NUMBER_OF_PACKAGE_BITS];
 
     for (uint8_t i = 0; i < NUMBER_OF_PACKAGE_BITS; i++) {
-      data_buffer[i] = digitalRead(IR_RECEIVE_PIN);
+      IR_module_buffer[i] = digitalRead(IR_RECEIVE_PIN);
       delayMicroseconds(2 * HALF_PERIOD_US);
     }
 
-    uint8_t received_val = 0;
-    uint8_t inverted_received_val = 0;
-    for (int i = (NUMBER_OF_PACKAGE_BITS_WO_CHECK-1); i >= 0; i--) {
-      received_val = (received_val << 1) + data_buffer[i];
-      inverted_received_val = (inverted_received_val << 1) + data_buffer[i + NUMBER_OF_PACKAGE_BITS_WO_CHECK];
-    }
-
-    if (inverted_received_val + received_val == 255) {
-      Serial.println("Received val:" + String(received_val));
-    }
+    print_buffer();
+    IR_module_buffer_status = 2;
   }
+}
+
+void transmit_package() {
+  send_IR_bit(0);  //start bit
+  for (uint8_t i = 0; i < NUMBER_OF_PACKAGE_BITS; i++) {
+    send_IR_bit(IR_module_buffer[i]);
+  }
+  IR_module_buffer_status = 3;
 }
 
 void send_IR_bit(uint8_t single_bit) {
@@ -49,15 +66,11 @@ void send_IR_bit(uint8_t single_bit) {
   }
 }
 
-void transmit_byte_package(uint8_t byte_data) {
-  uint8_t inverted_byte_data = ~byte_data;
-  send_IR_bit(0);  //start bit
-  for (uint8_t i = 0; i < NUMBER_OF_PACKAGE_BITS_WO_CHECK; i++) {
-    send_IR_bit(byte_data & 1);
-    byte_data = byte_data >> 1;
+void print_buffer() {
+  Serial.print(IR_module_buffer_status);
+  Serial.print(": ");
+  for (uint8_t i = 0; i < NUMBER_OF_PACKAGE_BITS; i++) {
+    Serial.print(IR_module_buffer[i]);
   }
-  for (uint8_t i = 0; i < NUMBER_OF_PACKAGE_BITS_WO_CHECK; i++) {
-    send_IR_bit(inverted_byte_data & 1);
-    inverted_byte_data = inverted_byte_data >> 1;
-  }
+  Serial.println();
 }
