@@ -14,13 +14,18 @@ function robotSimulation(mu1,mu2,mu3,bu,targetLocation,numberofiteration);
     mu1Row=mu1{1}(1);
     mu1Col=mu1{1}(2);
 
+    mu2Row=mu2(1);
+    mu2Col =mu2(2);
+    mu3Row=mu3(1);
+    mu3Col=mu3(2);
 
-    mu2Row=mu2{1}(1);
-    mu2Col =mu2{1}(2);
-
-
-    mu3Row=mu3{1}(1);
-    mu3Col=mu3{1}(2);
+    
+    % mu2Row=mu2{1}(1);
+    % mu2Col =mu2{1}(2);
+    % 
+    % 
+    % mu3Row=mu3{1}(1);
+    % mu3Col=mu3{1}(2);
 
 
 
@@ -32,7 +37,7 @@ function robotSimulation(mu1,mu2,mu3,bu,targetLocation,numberofiteration);
     plot1=scatter(mu1Col,mu1Row,'LineWidth', 2);
     plot2=scatter(mu2Col,mu2Row,'LineWidth', 2);
     plot3=scatter(mu3Col,mu3Row,'LineWidth', 2);
-    plot4=scatter(buCol,buRow,'LineWidth', 2);
+    plot4=scatter(buCol,buRow,'LineWidth', 1.5);
 
 
     viscircles([targetCol, targetRow], 0.2, 'EdgeColor', 'r', 'LineWidth', 2);
@@ -51,20 +56,20 @@ for i=2:numberofiteration
     mu1Col=mu1{i}(2);
 
 
-    mu2Row=mu2{i}(1);
-    mu2Col =mu2{i}(2);
-
-
-    mu3Row=mu3{i}(1);
-    mu3Col=mu3{i}(2);
+    % mu2Row=mu2{i}(1);
+    % mu2Col =mu2{i}(2);
+    % 
+    % 
+    % mu3Row=mu3{i}(1);
+    % mu3Col=mu3{i}(2);
     drawnow;
     plot1.XData = mu1Col;
     plot1.YData = mu1Row;
-    plot2.XData = mu2Col;
-    plot2.YData = mu2Row;
-    plot3.XData = mu3Col;
-    plot3.YData = mu3Row;
-    pause(0.5)
+    % plot2.XData = mu2Col;
+    % plot2.YData = mu2Row;
+    % plot3.XData = mu3Col;
+    % plot3.YData = mu3Row;
+    pause(0.3)
 end
 
 end
