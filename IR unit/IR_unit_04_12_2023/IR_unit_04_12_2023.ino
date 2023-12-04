@@ -7,6 +7,6 @@ void setup() {
 void loop() {
   receive_package_if_possible();
   //transmit_byte_package(32);
-  //delay(1000);
+  //delay(10);
 
 }
