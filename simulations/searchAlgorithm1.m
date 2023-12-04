@@ -39,10 +39,12 @@ function [mu_all,mu_info]=searchAlgorithm1(mu,mu_info,targetPosition)
         %Collect the data of mu past location
         mu_all{i}=[currentPosition(1), currentPosition(2)];
 
+        if([currentPosition(1), currentPosition(2)] == [targetRow,targetCol])
+            continue %wait for help
         % Check if the next position is within the grid
-        if all(nextPosition >= 1) && all(nextPosition <= size(mu_info))
+        elseif all(nextPosition >= 1) && all(nextPosition <= size(mu_info))
 
-            % Check if the next position is empty (field value is 0)
+            %Check if the next position is target
             if [nextPosition(1), nextPosition(2)] == [targetRow,targetCol]
 
                 %Change the value of currentPosition as targetishere
@@ -53,11 +55,9 @@ function [mu_all,mu_info]=searchAlgorithm1(mu,mu_info,targetPosition)
 
                 % Move to the target location and stay there
                 currentPosition=nextPosition;
-                
-                continue
-                
+                            
 
-            
+            % Check if the next position is empty (field value is 0)
             elseif mu_info(nextPosition(1), nextPosition(2)) == 0
                 %Change the value of currentPosition as scanned
                 mu_info(currentPosition(1), currentPosition(2))=5;
