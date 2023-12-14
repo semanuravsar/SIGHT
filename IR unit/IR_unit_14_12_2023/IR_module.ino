@@ -3,7 +3,7 @@
 #define IR_RECEIVE_PIN 3
 #define IR_LED 5
 
-#define NUMBER_OF_PACKAGE_BYTES 1
+#define NUMBER_OF_PACKAGE_BYTES 4
 
 //delayMicroseconds() very accurately in the range 3 microseconds and up to 16383. Be careful if you are not in this range
 #define K_NUMBER_OF_BURSTS 60
@@ -19,12 +19,35 @@ void initialize_IR_module() {
   pinMode(IR_LED, OUTPUT);
 }
 
+// =============================================================00000
+void set_buffer(uint16_t byte_index, uint8_t byte_value) {
+  IR_module_buffer[byte_index] = byte_value;
+}
+
+void transmit_buffer() {
+
+
+  transmit_zero(0);  //start bit
+  unsigned long spit_starts = micros();
+  int duration_offset = 0;
+  for (uint16_t byte_index = 0; byte_index < NUMBER_OF_PACKAGE_BYTES; byte_index++) {
+    for (uint8_t package_bit = 0; package_bit < 8; package_bit++) {
+      uint8_t send_bit = (IR_module_buffer[byte_index] & 1);
+      if (send_bit == 0) {
+        transmit_zero(duration_offset);
+      } else {
+        transmit_one(duration_offset);
+      }
+      IR_module_buffer[byte_index] = IR_module_buffer[byte_index] >> 1;
+    }
+  }
+}
 //TRANSITTERS ========================================================
 unsigned long TRANSMISSION_START_TIME = 0;
 
-void transmit_zero() {
+void transmit_zero(int duration_offset) {
   TRANSMISSION_START_TIME = micros();
-  while (micros() - TRANSMISSION_START_TIME < TRIGGER_DURATION_US) {
+  while (micros() - TRANSMISSION_START_TIME < (TRIGGER_DURATION_US + duration_offset)) {
     digitalWrite(IR_LED, HIGH);
     delayMicroseconds(BURST_HALF_PERIOD_US);
     digitalWrite(IR_LED, LOW);
@@ -32,13 +55,11 @@ void transmit_zero() {
   }
 }
 
-
-void transmit_one() {
+void transmit_one(int duration_offset) {
   TRANSMISSION_START_TIME = micros();
   digitalWrite(IR_LED, LOW);
-  delayMicroseconds(TRIGGER_DURATION_US);
+  delayMicroseconds(TRIGGER_DURATION_US + duration_offset);
 }
-
 
 void listen_IR() {
   unsigned long listen_start_time = millis();
