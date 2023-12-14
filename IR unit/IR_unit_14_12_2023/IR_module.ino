@@ -6,7 +6,7 @@
 #define NUMBER_OF_PACKAGE_BYTES 1
 
 //delayMicroseconds() very accurately in the range 3 microseconds and up to 16383. Be careful if you are not in this range
-#define K_NUMBER_OF_BURSTS 100
+#define K_NUMBER_OF_BURSTS 60
 #define BURST_HALF_PERIOD_US 13
 #define LISTEN_DURATION_MS 20
 
@@ -49,18 +49,20 @@ void listen_IR() {
       counter = counter + 1;
 
       if (counter > 5) {
-        Serial.println(counter);
         break;
       }
     }
   }
 
   //check if transmission is detected
-  if (counter>5) {
+  if (counter > 5) {
     delayMicroseconds(TRIGGER_DURATION_US * 1.5);
-    for (uint8_t i = 0; i < 16; i++) {
+    unsigned long listen_starts = micros();
+    for (uint8_t i = 0; i < 48; i++) {
       Serial.print(digitalRead(IR_RECEIVE_PIN));
-      delayMicroseconds(TRIGGER_DURATION_US);
+      while (micros() < listen_starts + (i + 1) * TRIGGER_DURATION_US) {
+        continue;
+      }
     }
     Serial.println();
 
