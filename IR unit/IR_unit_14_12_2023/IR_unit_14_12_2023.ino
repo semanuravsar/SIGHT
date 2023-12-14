@@ -8,16 +8,25 @@ void setup() {
 
 uint8_t a = 0;
 void loop() {
-  // transmit_preamble();
-  // transmit_one();
-  // transmit_zero();
-  // transmit_one();
-  // transmit_zero();
-  // transmit_one();
-  // transmit_zero();  
-  // transmit_trigger();
-  // delay(100);
+  transmit_zero();
+  transmit_zero();
+  transmit_one();
+  transmit_zero();
 
+  transmit_zero();
+  transmit_zero();
+  transmit_one();
+  transmit_zero();
 
-  //receive_broadcast();
+  transmit_zero();
+  transmit_zero();
+  transmit_one();
+  transmit_zero();
+
+  transmit_zero();
+  transmit_zero();
+  transmit_one();
+  transmit_zero();
+
+  delay(100);
 }
