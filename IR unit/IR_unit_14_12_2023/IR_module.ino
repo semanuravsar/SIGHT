@@ -14,27 +14,23 @@ unsigned long TRIGGER_DURATION_US = (BURST_HALF_PERIOD_US * 2) * K_NUMBER_OF_BUR
 
 uint8_t IR_module_buffer[NUMBER_OF_PACKAGE_BYTES];
 
-
-uint16_t get_number_of_bytes() {
-  return NUMBER_OF_PACKAGE_BYTES;
-}
-
-
-
 void initialize_IR_module() {
   pinMode(IR_RECEIVE_PIN, INPUT);
   pinMode(IR_LED, OUTPUT);
 }
 
-// =============================================================00000
+// =============================================================
+uint16_t get_number_of_bytes() {
+  return NUMBER_OF_PACKAGE_BYTES;
+}
+
 void set_buffer(uint16_t byte_index, uint8_t byte_value) {
   IR_module_buffer[byte_index] = byte_value;
 }
 
 void reverse_buffer() {
-  uint8_t reversed_byte = 0;
   for (int j = 0; j < NUMBER_OF_PACKAGE_BYTES; j++) {
-    
+    uint8_t reversed_byte = 0;
     for (int i = 0; i < 8; i++) {
       if (IR_module_buffer[j] & (1 << i)) {
         reversed_byte |= (1 << (7 - i));
@@ -47,6 +43,8 @@ void reverse_buffer() {
 void transmit_buffer() {
 
   reverse_buffer();
+  //=================
+
   transmit_zero();  //start bit
 
   for (uint16_t byte_index = 0; byte_index < NUMBER_OF_PACKAGE_BYTES; byte_index++) {
@@ -60,6 +58,8 @@ void transmit_buffer() {
       IR_module_buffer[byte_index] = IR_module_buffer[byte_index] >> 1;
     }
   }
+
+  //=================
   reverse_buffer();
 }
 //TRANSITTERS ========================================================
@@ -99,12 +99,10 @@ void listen_IR() {
   if (counter > 5) {
     delayMicroseconds(TRIGGER_DURATION_US * 1.5);
     unsigned long listen_starts = micros();
-    for (uint8_t i = 0; i < 32; i++) {
+    for (uint8_t i = 0; i < NUMBER_OF_PACKAGE_BYTES * 8; i++) {
       uint8_t byte_no = i / 8;
 
       IR_module_buffer[byte_no] = (IR_module_buffer[byte_no] << 1) + digitalRead(IR_RECEIVE_PIN);
-
-      //Serial.print(digitalRead(IR_RECEIVE_PIN));
       while (micros() < listen_starts + (i + 1) * TRIGGER_DURATION_US) {
         continue;
       }
@@ -121,6 +119,11 @@ void listen_IR() {
       Serial.println();
     } else {
       Serial.println("Package corrupted");
+      for (uint8_t i = 0; i < NUMBER_OF_PACKAGE_BYTES; i++) {
+        Serial.print(IR_module_buffer[i]);
+        Serial.print(' ');
+      }
+      Serial.println();
     }
 
     delay(10);
