@@ -21,7 +21,15 @@ void initialize_IR_module() {
 
 // =============================================================00000
 void set_buffer(uint16_t byte_index, uint8_t byte_value) {
-  IR_module_buffer[byte_index] = byte_value;
+  uint8_t reversed_byte = 0;
+
+  for (int i = 0; i < 8; i++) {
+    if (byte_value & (1 << i)) {
+      reversed_byte |= (1 << (7 - i));
+    }
+  }
+  
+  IR_module_buffer[byte_index] = reversed_byte;
 }
 
 void transmit_buffer() {
