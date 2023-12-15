@@ -15,7 +15,7 @@ unsigned long TRIGGER_DURATION_US = (BURST_HALF_PERIOD_US * 2) * K_NUMBER_OF_BUR
 uint8_t IR_module_buffer[NUMBER_OF_PACKAGE_BYTES];
 
 
-uint16_t get_number_of_bytes(){
+uint16_t get_number_of_bytes() {
   return NUMBER_OF_PACKAGE_BYTES;
 }
 
@@ -27,25 +27,26 @@ void initialize_IR_module() {
 }
 
 // =============================================================00000
-
-
-
-
 void set_buffer(uint16_t byte_index, uint8_t byte_value) {
+  IR_module_buffer[byte_index] = byte_value;
+}
+
+void reverse_buffer() {
   uint8_t reversed_byte = 0;
-
-  for (int i = 0; i < 8; i++) {
-    if (byte_value & (1 << i)) {
-      reversed_byte |= (1 << (7 - i));
+  for (int j = 0; j < NUMBER_OF_PACKAGE_BYTES; j++) {
+    
+    for (int i = 0; i < 8; i++) {
+      if (IR_module_buffer[j] & (1 << i)) {
+        reversed_byte |= (1 << (7 - i));
+      }
     }
+    IR_module_buffer[j] = reversed_byte;
   }
-
-  IR_module_buffer[byte_index] = reversed_byte;
 }
 
 void transmit_buffer() {
 
-
+  reverse_buffer();
   transmit_zero();  //start bit
 
   for (uint16_t byte_index = 0; byte_index < NUMBER_OF_PACKAGE_BYTES; byte_index++) {
@@ -59,8 +60,7 @@ void transmit_buffer() {
       IR_module_buffer[byte_index] = IR_module_buffer[byte_index] >> 1;
     }
   }
-
-  
+  reverse_buffer();
 }
 //TRANSITTERS ========================================================
 unsigned long TRANSMISSION_START_TIME = 0;
