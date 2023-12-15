@@ -3,8 +3,6 @@
 #ifndef IR_MODULE_H
 #define IR_MODULE_H
 
-#include <Arduino.h>
-
 #define IR_RECEIVE_PIN 3
 #define IR_LED 5
 

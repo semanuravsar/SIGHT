@@ -73,6 +73,7 @@ void transmit_zero() {
     digitalWrite(IR_LED, LOW);
     delayMicroseconds(BURST_HALF_PERIOD_US);
   }
+  
 }
 
 void transmit_one() {
