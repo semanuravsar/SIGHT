@@ -96,16 +96,19 @@ void listen_IR() {
         continue;
       }
     }
-    for (uint8_t i = 0; i < NUMBER_OF_PACKAGE_BYTES; i++) {
-      Serial.print(IR_module_buffer[i]);
-      Serial.print(' ');
-    }
-    Serial.println();
+
     uint16_t CRC_16 = generate_CRC_16_bit();
     uint8_t CRC_SIG = CRC_16 >> 8;
-    Serial.println(CRC_SIG);
     uint8_t CRC_LST = CRC_16 % 256;
-    Serial.println(CRC_LST);
+    if (IR_module_buffer[NUMBER_OF_PACKAGE_BYTES - 1] == CRC_LST && IR_module_buffer[NUMBER_OF_PACKAGE_BYTES - 2] == CRC_SIG) {
+      for (uint8_t i = 0; i < NUMBER_OF_PACKAGE_BYTES; i++) {
+        Serial.print(IR_module_buffer[i]);
+        Serial.print(' ');
+      }
+      Serial.println();
+    } else {
+      Serial.println("Package corrupted");
+    }
 
     delay(10);
     //start sampling
