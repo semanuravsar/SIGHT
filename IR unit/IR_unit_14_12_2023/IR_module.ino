@@ -28,7 +28,7 @@ void set_buffer(uint16_t byte_index, uint8_t byte_value) {
       reversed_byte |= (1 << (7 - i));
     }
   }
-  
+
   IR_module_buffer[byte_index] = reversed_byte;
 }
 
@@ -88,7 +88,7 @@ void listen_IR() {
     unsigned long listen_starts = micros();
     for (uint8_t i = 0; i < 32; i++) {
       uint8_t byte_no = i / 8;
-      
+
       IR_module_buffer[byte_no] = (IR_module_buffer[byte_no] << 1) + digitalRead(IR_RECEIVE_PIN);
 
       //Serial.print(digitalRead(IR_RECEIVE_PIN));
@@ -96,13 +96,40 @@ void listen_IR() {
         continue;
       }
     }
-    for(uint8_t i=0; i<NUMBER_OF_PACKAGE_BYTES; i++) {
-
+    for (uint8_t i = 0; i < NUMBER_OF_PACKAGE_BYTES; i++) {
       Serial.print(IR_module_buffer[i]);
       Serial.print(' ');
     }
-
     Serial.println();
+    uint16_t CRC_16 = generate_CRC_16_bit();
+    uint8_t CRC_SIG = CRC_16 >> 8;
+    Serial.println(CRC_SIG);
+    uint8_t CRC_LST = CRC_16 % 256;
+    Serial.println(CRC_LST);
+
+    delay(10);
     //start sampling
   }
+}
+
+
+//MAGICAL CRC_16 MODBUS code.
+uint16_t generate_CRC_16_bit() {
+  uint16_t remainder = CRC_16_bit_for_1BYTE(IR_module_buffer[0], 65535);
+  for (uint8_t i = 1; i < NUMBER_OF_PACKAGE_BYTES - 2; i++) {
+    remainder = CRC_16_bit_for_1BYTE(IR_module_buffer[i], remainder);
+  }
+  return remainder;
+}
+uint16_t CRC_16_bit_for_1BYTE(uint16_t data, uint16_t last_data) {
+  //if this is first data (i.e LAST_DATA==null), LAST_DATA= 65535 = FFFF
+  uint16_t key = 40961;     //1010 0000 0000 0001
+  data = data ^ last_data;  //XOR
+  for (int i = 0; i < 8; i++) {
+    boolean should_XOR = false;
+    if (data % 2 == 1) should_XOR = true;
+    data = data >> 1;
+    if (should_XOR) data = data ^ key;
+  }
+  return data;
 }
