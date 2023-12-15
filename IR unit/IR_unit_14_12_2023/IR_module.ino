@@ -9,10 +9,17 @@
 #define K_NUMBER_OF_BURSTS 60
 #define BURST_HALF_PERIOD_US 13
 #define LISTEN_DURATION_MS 20
-
+#define TRANSMIT_SLEEP_TIME 20
 unsigned long TRIGGER_DURATION_US = (BURST_HALF_PERIOD_US * 2) * K_NUMBER_OF_BURSTS;
 
 uint8_t IR_module_buffer[NUMBER_OF_PACKAGE_BYTES];
+
+
+uint16_t get_number_of_bytes(){
+  return NUMBER_OF_PACKAGE_BYTES;
+}
+
+
 
 void initialize_IR_module() {
   pinMode(IR_RECEIVE_PIN, INPUT);
@@ -20,6 +27,10 @@ void initialize_IR_module() {
 }
 
 // =============================================================00000
+
+
+
+
 void set_buffer(uint16_t byte_index, uint8_t byte_value) {
   uint8_t reversed_byte = 0;
 
@@ -35,27 +46,28 @@ void set_buffer(uint16_t byte_index, uint8_t byte_value) {
 void transmit_buffer() {
 
 
-  transmit_zero(0);  //start bit
-  unsigned long spit_starts = micros();
-  int duration_offset = 0;
+  transmit_zero();  //start bit
+
   for (uint16_t byte_index = 0; byte_index < NUMBER_OF_PACKAGE_BYTES; byte_index++) {
     for (uint8_t package_bit = 0; package_bit < 8; package_bit++) {
       uint8_t send_bit = (IR_module_buffer[byte_index] & 1);
       if (send_bit == 0) {
-        transmit_zero(duration_offset);
+        transmit_zero();
       } else {
-        transmit_one(duration_offset);
+        transmit_one();
       }
       IR_module_buffer[byte_index] = IR_module_buffer[byte_index] >> 1;
     }
   }
+
+  
 }
 //TRANSITTERS ========================================================
 unsigned long TRANSMISSION_START_TIME = 0;
 
-void transmit_zero(int duration_offset) {
+void transmit_zero() {
   TRANSMISSION_START_TIME = micros();
-  while (micros() - TRANSMISSION_START_TIME < (TRIGGER_DURATION_US + duration_offset)) {
+  while (micros() - TRANSMISSION_START_TIME < (TRIGGER_DURATION_US)) {
     digitalWrite(IR_LED, HIGH);
     delayMicroseconds(BURST_HALF_PERIOD_US);
     digitalWrite(IR_LED, LOW);
@@ -63,11 +75,12 @@ void transmit_zero(int duration_offset) {
   }
 }
 
-void transmit_one(int duration_offset) {
+void transmit_one() {
   TRANSMISSION_START_TIME = micros();
   digitalWrite(IR_LED, LOW);
-  delayMicroseconds(TRIGGER_DURATION_US + duration_offset);
+  delayMicroseconds(TRIGGER_DURATION_US);
 }
+
 
 void listen_IR() {
   unsigned long listen_start_time = millis();
