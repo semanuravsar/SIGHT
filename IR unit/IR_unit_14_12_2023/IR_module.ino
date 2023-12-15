@@ -68,7 +68,6 @@ void listen_IR() {
     if (digitalRead(IR_RECEIVE_PIN) == 0) {
       delayMicroseconds(BURST_HALF_PERIOD_US);
       counter = counter + 1;
-
       if (counter > 5) {
         break;
       }
@@ -79,14 +78,23 @@ void listen_IR() {
   if (counter > 5) {
     delayMicroseconds(TRIGGER_DURATION_US * 1.5);
     unsigned long listen_starts = micros();
-    for (uint8_t i = 0; i < 48; i++) {
-      Serial.print(digitalRead(IR_RECEIVE_PIN));
+    for (uint8_t i = 0; i < 32; i++) {
+      uint8_t byte_no = i / 8;
+      
+      IR_module_buffer[byte_no] = (IR_module_buffer[byte_no] << 1) + digitalRead(IR_RECEIVE_PIN);
+
+      //Serial.print(digitalRead(IR_RECEIVE_PIN));
       while (micros() < listen_starts + (i + 1) * TRIGGER_DURATION_US) {
         continue;
       }
     }
-    Serial.println();
+    for(uint8_t i=0; i<NUMBER_OF_PACKAGE_BYTES; i++) {
 
+      Serial.print(IR_module_buffer[i]);
+      Serial.print(' ');
+    }
+
+    Serial.println();
     //start sampling
   }
 }
