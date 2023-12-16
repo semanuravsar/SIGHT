@@ -3,7 +3,7 @@
 #define IR_RECEIVE_PIN 3
 #define IR_LED 5
 
-#define NUMBER_OF_PACKAGE_BYTES 4
+#define NUMBER_OF_PACKAGE_BYTES 4 //cannot be smaller than 3.
 
 //delayMicroseconds() very accurately in the range 3 microseconds and up to 16383. Be careful if you are not in this range
 #define K_NUMBER_OF_BURSTS 60
