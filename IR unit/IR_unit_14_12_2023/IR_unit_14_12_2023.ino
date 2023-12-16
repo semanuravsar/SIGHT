@@ -39,7 +39,7 @@ void trial_T1_and_T2() {
         set_buffer(3, CRC_LST);
         transmit_buffer();
         Serial.println(String(i) + " / " + String(255));
-        delay(25);
+        delay(20);
       }
       Serial.println("Transmitting process is completed.");
     } else if (incoming_byte == 'L') {
