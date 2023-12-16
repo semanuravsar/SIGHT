@@ -6,17 +6,20 @@
 #define IR_RECEIVE_PIN 3
 #define IR_LED 5
 
-#define NUMBER_OF_PACKAGE_BYTES 4
-
 #define K_NUMBER_OF_BURSTS 60
 #define BURST_HALF_PERIOD_US 13
 #define LISTEN_DURATION_MS 20
+#define TRANSMIT_SLEEP_TIME 20
 
+extern uint8_t NUMBER_OF_PACKAGE_BYTES;
 extern unsigned long TRIGGER_DURATION_US;
-extern uint8_t IR_module_buffer[NUMBER_OF_PACKAGE_BYTES];
+extern uint8_t IR_module_buffer[8];
 
 void initialize_IR_module();
+uint16_t get_number_of_package_bytes();
+void set_number_of_package_bytes(uint16_t new_package_size);
 void set_buffer(uint16_t byte_index, uint8_t byte_value);
+void reverse_buffer();
 void transmit_buffer();
 void transmit_zero();
 void transmit_one();

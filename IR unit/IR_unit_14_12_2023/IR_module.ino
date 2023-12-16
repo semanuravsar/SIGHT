@@ -3,16 +3,16 @@
 #define IR_RECEIVE_PIN 3
 #define IR_LED 5
 
-#define NUMBER_OF_PACKAGE_BYTES 4 //cannot be smaller than 3.
-
 //delayMicroseconds() very accurately in the range 3 microseconds and up to 16383. Be careful if you are not in this range
 #define K_NUMBER_OF_BURSTS 60
 #define BURST_HALF_PERIOD_US 13
 #define LISTEN_DURATION_MS 20
 #define TRANSMIT_SLEEP_TIME 20
+
+uint8_t NUMBER_OF_PACKAGE_BYTES = 4;  //cannot be smaller than 3.
 unsigned long TRIGGER_DURATION_US = (BURST_HALF_PERIOD_US * 2) * K_NUMBER_OF_BURSTS;
 
-uint8_t IR_module_buffer[NUMBER_OF_PACKAGE_BYTES];
+uint8_t IR_module_buffer[8];
 
 void initialize_IR_module() {
   pinMode(IR_RECEIVE_PIN, INPUT);
@@ -20,10 +20,12 @@ void initialize_IR_module() {
 }
 
 // =============================================================
-uint16_t get_number_of_bytes() {
+uint16_t get_number_of_package_bytes() {
   return NUMBER_OF_PACKAGE_BYTES;
 }
-
+void set_number_of_package_bytes(uint16_t new_package_size) {
+  NUMBER_OF_PACKAGE_BYTES = new_package_size;
+}
 void set_buffer(uint16_t byte_index, uint8_t byte_value) {
   IR_module_buffer[byte_index] = byte_value;
 }
@@ -73,7 +75,6 @@ void transmit_zero() {
     digitalWrite(IR_LED, LOW);
     delayMicroseconds(BURST_HALF_PERIOD_US);
   }
-
 }
 
 void transmit_one() {
@@ -81,7 +82,6 @@ void transmit_one() {
   digitalWrite(IR_LED, LOW);
   delayMicroseconds(TRIGGER_DURATION_US);
 }
-
 
 uint8_t listen_IR() {
   unsigned long listen_start_time = millis();
@@ -100,7 +100,7 @@ uint8_t listen_IR() {
   if (counter > 5) {
     delayMicroseconds(TRIGGER_DURATION_US * 1.5);
     unsigned long listen_starts = micros();
-    for (uint8_t i = 0; i < NUMBER_OF_PACKAGE_BYTES * 8; i++) {
+    for (uint8_t i = 0; i < (NUMBER_OF_PACKAGE_BYTES * 8); i++) {
       uint8_t byte_no = i / 8;
 
       IR_module_buffer[byte_no] = (IR_module_buffer[byte_no] << 1) + digitalRead(IR_RECEIVE_PIN);
@@ -118,14 +118,14 @@ uint8_t listen_IR() {
         Serial.print(' ');
       }
       Serial.println();
-      return 1; //Package is valid. return 1
+      return 1;  //Package is valid. return 1
     } else {
       Serial.println("Package corrupted");
-      return 2; // CRC check is failed. return 2
-    }  
+      return 2;  // CRC check is failed. return 2
+    }
   }
 
-  return 0; // No signal is detected. return 0
+  return 0;  // No signal is detected. return 0
 }
 
 
