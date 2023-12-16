@@ -7,34 +7,50 @@ void setup() {
 }
 
 void loop() {
-  sender_trial();
-  //listener_trial();
+  trial_T1_and_T2();
 }
 
 
-void listener_trial() {
-  listen_IR();
-}
-void sender_trial() {
+void trial_T1_and_T2() {
+  //To be used in test 1 and test 2
+  static unsigned long succesful_package_counter = 0;
+  static unsigned long corrupted_package_counter = 0;
+
+
+  uint8_t listening_result = listen_IR();
+  if (listening_result == 1) {
+    succesful_package_counter = succesful_package_counter + 1;
+  } else if (listening_result == 2) {
+    corrupted_package_counter = corrupted_package_counter + 1;
+  }
 
   if (Serial.available() > 0) {
-    if (Serial.read() == 's') {
-      Serial.println("Key 's' is pressed. Sending the data...");
+    int incoming_byte = Serial.read();
 
-      for (uint8_t i = 0; i < 1; i++) {
-        set_buffer(0, 15);
-        set_buffer(1, 20);
+    if (incoming_byte == 'S') {
+      Serial.println("Sending the data...");
+      for (uint16_t i = 0; i < 256; i++) {
+        set_buffer(0, i);
+        set_buffer(1, i);
         uint16_t CRC_16 = generate_CRC_16_bit();
         uint8_t CRC_SIG = CRC_16 >> 8;
         uint8_t CRC_LST = CRC_16 % 256;
         set_buffer(2, CRC_SIG);
         set_buffer(3, CRC_LST);
-        Serial.println("15 20 " + String(CRC_SIG) + " " + String(CRC_LST));
         transmit_buffer();
-        delay(100);
+        Serial.println(String(i) + " / " + String(255));
+        delay(25);
       }
-
       Serial.println("Transmitting process is completed.");
+    } else if (incoming_byte == 'L') {
+      Serial.println("\nTotal packages received:" + String(succesful_package_counter + corrupted_package_counter));
+      Serial.println("Succesfull packages:" + String(succesful_package_counter));
+      Serial.println("Corrupted packages:" + String(corrupted_package_counter));
+      Serial.println("Succes ratio is left as an exercise = " + String(succesful_package_counter) + " / " + String(succesful_package_counter + corrupted_package_counter));
+    } else if (incoming_byte == 'R') {
+      Serial.println("\nCounters are reseted");
+      succesful_package_counter = 0;
+      corrupted_package_counter = 0;
     }
   }
 }
