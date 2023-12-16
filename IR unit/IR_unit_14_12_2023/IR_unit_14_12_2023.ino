@@ -49,23 +49,25 @@ void communication_test() {
       for (uint16_t i = 0; i < number_of_package_bytes - 2; i++) {
         uint8_t rand_number = random(256);
         set_buffer(i, rand_number);
-        Serial.println(String(rand_number) + " " );
+        Serial.print(String(rand_number) + " " );
       }
-      Serial.println();
       uint16_t CRC_16 = generate_CRC_16_bit();
       uint8_t CRC_SIG = CRC_16 >> 8;
       uint8_t CRC_LST = CRC_16 % 256;
+      Serial.println(String(CRC_SIG) + " " +String(CRC_LST));
       set_buffer(number_of_package_bytes - 2, CRC_SIG);
       set_buffer(number_of_package_bytes - 1, CRC_LST);
+
       transmit_buffer();
       delay(20);
     } else if (incoming_byte == 'P') {
       while (Serial.available() == 0) {}
       int package_number = Serial.read();
-      Serial.println(String(package_number));
-      if ('3' <= package_number && package_number <= '7') {
+      if ('3' <= package_number && package_number <= '8') {
         set_number_of_package_bytes(package_number - '0');
         Serial.println("Number of package byte is set to: "+ String(package_number - '0'));
+      }else{
+        Serial.println("Error: Number of package is not in limits");
       }
     } else if (incoming_byte == 'L') {
       Serial.println("\nTotal packages received:" + String(succesful_package_counter + corrupted_package_counter));
