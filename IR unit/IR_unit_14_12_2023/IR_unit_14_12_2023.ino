@@ -1,13 +1,13 @@
 
 #include "IR_module_header.h";
+
 void setup() {
   Serial.begin(115200);
-
   initialize_IR_module();
 }
 
 void loop() {
-  communication_test();
+communication_test();
 }
 
 
@@ -15,7 +15,6 @@ void communication_test() {
   //To be used in test 1 and test 2
   static unsigned long succesful_package_counter = 0;
   static unsigned long corrupted_package_counter = 0;
-
 
   uint8_t listening_result = listen_IR();
   if (listening_result == 1) {
@@ -49,12 +48,12 @@ void communication_test() {
       for (uint16_t i = 0; i < number_of_package_bytes - 2; i++) {
         uint8_t rand_number = random(256);
         set_buffer(i, rand_number);
-        Serial.print(String(rand_number) + " " );
+        Serial.print(String(rand_number) + " ");
       }
       uint16_t CRC_16 = generate_CRC_16_bit();
       uint8_t CRC_SIG = CRC_16 >> 8;
       uint8_t CRC_LST = CRC_16 % 256;
-      Serial.println(String(CRC_SIG) + " " +String(CRC_LST));
+      Serial.println(String(CRC_SIG) + " " + String(CRC_LST));
       set_buffer(number_of_package_bytes - 2, CRC_SIG);
       set_buffer(number_of_package_bytes - 1, CRC_LST);
 
@@ -65,8 +64,8 @@ void communication_test() {
       int package_number = Serial.read();
       if ('3' <= package_number && package_number <= '8') {
         set_number_of_package_bytes(package_number - '0');
-        Serial.println("Number of package byte is set to: "+ String(package_number - '0'));
-      }else{
+        Serial.println("Number of package byte is set to: " + String(package_number - '0'));
+      } else {
         Serial.println("Error: Number of package is not in limits");
       }
     } else if (incoming_byte == 'L') {

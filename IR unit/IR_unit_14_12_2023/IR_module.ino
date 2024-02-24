@@ -26,6 +26,7 @@ uint16_t get_number_of_package_bytes() {
 void set_number_of_package_bytes(uint16_t new_package_size) {
   NUMBER_OF_PACKAGE_BYTES = new_package_size;
 }
+
 void set_buffer(uint16_t byte_index, uint8_t byte_value) {
   IR_module_buffer[byte_index] = byte_value;
 }
@@ -84,6 +85,7 @@ void transmit_one() {
 }
 
 uint8_t listen_IR() {
+
   unsigned long listen_start_time = millis();
   uint8_t counter = 0;
   while (millis() - listen_start_time < LISTEN_DURATION_MS) {
@@ -127,7 +129,6 @@ uint8_t listen_IR() {
 
   return 0;  // No signal is detected. return 0
 }
-
 
 //MAGICAL CRC_16 MODBUS code.
 uint16_t generate_CRC_16_bit() {
