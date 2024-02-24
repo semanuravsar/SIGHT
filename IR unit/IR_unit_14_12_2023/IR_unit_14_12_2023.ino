@@ -21,6 +21,8 @@ void communication_test() {
     succesful_package_counter = succesful_package_counter + 1;
   } else if (listening_result == 2) {
     corrupted_package_counter = corrupted_package_counter + 1;
+  } else if (listening_result == 0){
+    //pass (no data is received)
   }
 
   if (Serial.available() > 0) {
