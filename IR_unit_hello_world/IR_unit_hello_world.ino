@@ -7,10 +7,12 @@ void setup() {
 }
 
 void loop() {
-communication_test();
+ //communication_test();
 }
 
+void transceiver_mode(){
 
+}
 void communication_test() {
   //To be used in test 1 and test 2
   static unsigned long succesful_package_counter = 0;
