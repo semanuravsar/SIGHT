@@ -8,10 +8,40 @@ void setup() {
 
 void loop() {
  //communication_test();
+ transmitter_mode();
 }
 
-void transceiver_mode(){
+void transmitter_mode(){//To be used in test 1 and test 2
 
+  if (Serial.available() > 0) {
+    delay(20);
+
+    while(Serial.available()>0){
+
+    int sent_message_length = Serial.available();
+    uint16_t number_of_package_bytes = get_number_of_package_bytes();
+
+  
+      Serial.println("Sending custom message...");
+
+      for (uint16_t i = 0; i < sent_message_length; i++) {
+        set_buffer(0,i);
+        set_buffer(1,Serial.read());
+
+        uint16_t CRC_16 = generate_CRC_16_bit();
+        uint8_t CRC_SIG = CRC_16 >> 8;
+        uint8_t CRC_LST = CRC_16 % 256;
+        set_buffer(number_of_package_bytes - 2, CRC_SIG);
+        set_buffer(number_of_package_bytes - 1, CRC_LST);
+        transmit_buffer();
+        Serial.println(String(i) + " / " + String(255));
+        delay(20);
+      }
+
+      Serial.println("Transmitting process is completed.");
+    
+  }
+}
 }
 void communication_test() {
   //To be used in test 1 and test 2
