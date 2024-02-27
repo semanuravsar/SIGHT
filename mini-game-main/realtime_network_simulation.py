@@ -63,13 +63,15 @@ while True:
     #update simulation
     base_station.turn_off_all_transmitters()
     base_station.turn_on_transmitter(counter%base_station.get_number_of_transmitters())  
+    #slave_1.move_x_y(0.00, -0.01)
+    slave_1.rotate(0.5)
 
     #calculate the states
     for unit in units:
         unit.update_receiver_states(units)
 
     #display the current frame
-    display_current_frame(units = units, frame_time_ms = 500)
+    display_current_frame(units = units, frame_time_ms = 10)
 
     counter += 1
 

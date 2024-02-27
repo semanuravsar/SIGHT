@@ -79,6 +79,19 @@ class TransceiverUnit():
         self.__initiliaze_receivers()
         self.__initiliaze_transmitters()
     
+    def move_x_y(self, del_x:float=0, del_y:float=0, section_offset_angle:float = 0.0):
+        self.OFFSET_RAD = math.radians(section_offset_angle)
+        self.x = self.x + del_x
+        self.y = self.y + del_y
+
+        self.__initiliaze_receivers()
+        self.__initiliaze_transmitters()
+
+    def rotate(self, angle:float):
+        self.OFFSET_RAD = self.OFFSET_RAD + math.radians(angle)
+        self.__initiliaze_receivers()
+        self.__initiliaze_transmitters()
+    
     def __initiliaze_receivers(self):
         self.receivers = []
         for i in range(self.NUMBER_OF_SECTIONS):            
@@ -181,22 +194,17 @@ class TransceiverUnit():
         RECEIVER_CONE_SCALE = 0.75
         RECEIVER_DOT_RADIUS= 0.05
         TRANSMITTER_DOT_RADIUS = 0.03
+        TRANSCEIVER_FRONT_ARROW_SCALE = 1.5
         OFFSET_M = edge_length_m / 2 #same for x and y
 
         func_x_to_px = lambda x: int((x+OFFSET_M)*M_TO_PX)
         func_y_to_px = lambda y: int((OFFSET_M-y)*M_TO_PX)
 
         x_px = func_x_to_px(self.x)
-        y_px = func_y_to_px(self.y)
-
+        y_px = func_y_to_px(self.y)           
         cv2.circle(frame, (x_px, y_px), int(self.TRANSCEIVER_RADIUS * M_TO_PX), (125, 125, 125), -1)      
-        half_px = int((self.TRANSCEIVER_RADIUS/5) * M_TO_PX)   
-        cv2.putText(frame, str(self.ID), (x_px-half_px, y_px+half_px), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
-        #cv2.circle(frame, (x_px, y_px), int(RECEIVER_CONE_SCALE * M_TO_PX), (0, 255, 0), 1)
-        #cv2.circle(frame, (x_px, y_px), int(TRANSMITTER_CONE_SCALE * M_TO_PX), (0, 0, 255), 1)
-
-       #draw the receivers
+        #draw the receivers
         for receiver in self.receivers:
             x_px = func_x_to_px(receiver.x)
             y_px = func_y_to_px(receiver.y)
@@ -233,6 +241,18 @@ class TransceiverUnit():
                 cv2.polylines(frame, [np.array(triangle_coordinates)], isClosed=True, color=transmitter_color, thickness=1)
             else:
                 cv2.circle(frame, (x_px, y_px), int((TRANSMITTER_DOT_RADIUS) * M_TO_PX), transmitter_color, 1)
+
+        #draw direction vector of the robot 
+        robot_front_direction = np.array([math.cos(self.OFFSET_RAD ), math.sin(self.OFFSET_RAD)])
+        x_px = func_x_to_px(self.x)
+        y_px = func_y_to_px(self.y)
+        end_x_px = func_x_to_px(self.x + robot_front_direction[0]*self.TRANSCEIVER_RADIUS*TRANSCEIVER_FRONT_ARROW_SCALE)
+        end_y_px = func_y_to_px(self.y + robot_front_direction[1]*self.TRANSCEIVER_RADIUS*TRANSCEIVER_FRONT_ARROW_SCALE)
+        cv2.line(frame, (x_px, y_px), (end_x_px, end_y_px), (0, 0, 0), 2)
+        
+        #draw the ID of the robot
+        half_px = int((self.TRANSCEIVER_RADIUS/5) * M_TO_PX)   
+        cv2.putText(frame, str(self.ID), (x_px-half_px, y_px+half_px), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
     def update_receiver_states(self, units):
         for receiver in self.receivers:
