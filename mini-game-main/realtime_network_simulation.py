@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 
 
-def display_current_frame(img_size = 500, edge_length_m = 2.75, transceivers = [], obstacles = []):    
+def display_current_frame(img_size = 750, edge_length_m = 2.75, units = [], obstacles = [], frame_time_ms = 250):    
     GRID_SIZE = 9
     M_TO_PX = img_size/edge_length_m
 
@@ -19,51 +19,56 @@ def display_current_frame(img_size = 500, edge_length_m = 2.75, transceivers = [
         # Horizontal lines
         cv2.line(frame, (spacing_px, spacing_px + i * spacing_px), (img_size - spacing_px, spacing_px + i * spacing_px), (0, 0, 0), 1)
 
-    for transceiver in transceivers:
-        transceiver.draw_transceiver(frame, img_size = img_size, edge_length_m = edge_length_m, M_TO_PX = M_TO_PX)
-
-    for transceiver in transceivers:
-        transceiver.draw_transceiver_sensors(frame, img_size = img_size, edge_length_m = edge_length_m, M_TO_PX = M_TO_PX)
-
+    for transceiver in units:
+        transceiver.draw_transceiver(frame, img_size = img_size, edge_length_m = edge_length_m, M_TO_PX = M_TO_PX)   
 
     cv2.imshow('simulation', frame)
+    cv2.waitKey(frame_time_ms)
+    
 
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
-transceivers = []
+units = []
 
 base_station = TransceiverUnit(
     id = 0, 
     x=0, 
     y=0, 
+    number_of_sections = 18, 
+    section_offset_angle = 0, 
+    transceiver_radius = 0.17,
+    receiver_placement_radius = 0.10,
+    receiver_view_cone_angle = 75.0, 
+    transmitter_placement_radius = 0.15,
+    transmitter_view_cone_angle = 30
+)
+units.append(base_station)
+
+slave_1 = TransceiverUnit(
+    id = 1, 
+    x=0.25*3, 
+    y=0.25*3, 
     number_of_sections = 6, 
     section_offset_angle = 0, 
     transceiver_radius = 0.17,
     receiver_placement_radius = 0.10,
     receiver_view_cone_angle = 75.0, 
     transmitter_placement_radius = 0.15,
-    transmitter_view_cone_angle = 30.0
+    transmitter_view_cone_angle = 30
 )
-transceivers.append(base_station)
-
-# slave_1 = TransceiverUnit(
-#     id = 1, 
-#     x=0.25, 
-#     y=0.5, 
-#     number_of_sections = 6, 
-#     section_offset_angle = 0, 
-#     transceiver_radius = 0.17,
-#     receiver_placement_radius = 0.10,
-#     receiver_view_cone_angle = 75.0, 
-#     transmitter_placement_radius = 0.15,
-#     transmitter_view_cone_angle = 30.0
-# )
-# transceivers.append(slave_1)
-
-display_current_frame(transceivers = transceivers)
 
 
+units.append(slave_1)
+
+counter = 0
+while True:
+    base_station.turn_off_all_transmitters()
+
+    base_station.turn_on_transmitter(counter%base_station.get_number_of_transmitters())  
+
+    display_current_frame(units = units, frame_time_ms = 250)
+
+    counter += 1
+
+
+cv2.destroyAllWindows()
                  
  

@@ -7,11 +7,10 @@ class Receiver():
     def __init__(self, receiver_no:int, x:float, y:float, facing_direction_vector:np.ndarray, view_cone_vectors:list[np.ndarray]):
         self.RECEIVER_NO = receiver_no
         self.FACING_DIRECTION = facing_direction_vector
-        self.VIEW_CONE_VECTORS = view_cone_vectors
+        self.VIEW_CONE_VECTORS = view_cone_vectors        
         self.x = x
         self.y = y
-
-        self.receiver_state = 1 # 1 if the receiver is receiving IR signal, 0 otherwise
+        self.receiver_state = 0 # 1 if the receiver is receiving IR signal, 0 otherwise
 
     def get_position(self):
         return (self.x, self.y)
@@ -33,7 +32,7 @@ class Transmitter():
         self.x = x
         self.y = y
 
-        self.transmitter_state = 1 #if the transmitter is emitting IR signal, this is 1, otherwise 0
+        self.transmitter_state = 0 #if the transmitter is emitting IR signal, this is 1, otherwise 0
 
     def turn_on(self):
         self.transmitter_state = 1
@@ -112,7 +111,7 @@ class TransceiverUnit():
             # Rotation matrix
             for multiplier in [-0.5, 0.5]:
 
-                angle_rad = multiplier * self.RECEIVER_VIEW_CONE_RAD                
+                angle_rad = multiplier * self.TRANSMITTER_VIEW_CONE_RAD                
                 rotation_matrix = np.array([
                     [np.cos(angle_rad), -np.sin(angle_rad)],
                     [np.sin(angle_rad), np.cos(angle_rad)]
@@ -165,27 +164,33 @@ class TransceiverUnit():
         
         return return_dict
 
+    def get_number_of_receivers(self):
+        return len(self.receivers)
+    
+    def get_number_of_transmitters(self):
+        return len(self.transmitters)
+    
     def draw_transceiver(self, frame, img_size = None, edge_length_m = None, M_TO_PX = None):
-        offset_m = edge_length_m / 2 #same for x and y
+        RECEIVER_CONE_SCALE = 0.5
+        RECEIVER_DOT_RADIUS= 0.05
+        TRANSMITTER_DOT_RADIUS = 0.03
+        OFFSET_M = edge_length_m / 2 #same for x and y
 
-        x_px = int( (self.x + offset_m) * M_TO_PX)
-        y_px = int( (offset_m-self.y) * M_TO_PX)
+        func_x_to_px = lambda x: int((x+OFFSET_M)*M_TO_PX)
+        func_y_to_px = lambda y: int((OFFSET_M-y)*M_TO_PX)
+
+        x_px = func_x_to_px(self.x)
+        y_px = func_y_to_px(self.y)
 
         cv2.circle(frame, (x_px, y_px), int(self.TRANSCEIVER_RADIUS * M_TO_PX), (125, 125, 125), -1)      
         half_px = int((self.TRANSCEIVER_RADIUS/5) * M_TO_PX)   
         cv2.putText(frame, str(self.ID), (x_px-half_px, y_px+half_px), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
-        
-    def draw_transceiver_sensors(self, frame, img_size = None, edge_length_m = None, M_TO_PX = None):
-        RECEIVER_CONE_SCALE = 1
-        RECEIVER_DOT_RADIUS= 0.05
-        TRANSMITTER_DOT_RADIUS = 0.03
 
-        offset_m = edge_length_m / 2 #same for x and y
-
-        #draw the receivers
+   
+       #draw the receivers
         for receiver in self.receivers:
-            x_px = int( (receiver.x + offset_m) * M_TO_PX)
-            y_px = int( (offset_m-receiver.y) * M_TO_PX)
+            x_px = func_x_to_px(receiver.x)
+            y_px = func_y_to_px(receiver.y)
 
             receiver_color = (0, 255, 0) if receiver.get_state() == 1 else (75, 75, 75)            
 
@@ -193,19 +198,18 @@ class TransceiverUnit():
                 cv2.circle(frame, (x_px, y_px), int((RECEIVER_DOT_RADIUS) * M_TO_PX), receiver_color, -1)
                 triangle_coordinates = [ [x_px,y_px]]
                 for vector in receiver.VIEW_CONE_VECTORS:
-                    end_x = int( (receiver.x + offset_m + vector[0]*RECEIVER_CONE_SCALE) * M_TO_PX)
-                    end_y = int( (offset_m -(receiver.y + vector[1]*RECEIVER_CONE_SCALE)) * M_TO_PX)
+                    end_x = func_x_to_px(receiver.x + vector[0]*RECEIVER_CONE_SCALE)
+                    end_y = func_y_to_px(receiver.y + vector[1]*RECEIVER_CONE_SCALE)
                     triangle_coordinates.append([end_x, end_y])
 
-                #cv2.polylines(frame, [np.array(triangle_coordinates)], isClosed=True, color=receiver_color, thickness=1)
+                cv2.polylines(frame, [np.array(triangle_coordinates)], isClosed=True, color=receiver_color, thickness=1)
             else:
                 cv2.circle(frame, (x_px, y_px), int((RECEIVER_DOT_RADIUS) * M_TO_PX), receiver_color, 2)
 
-
         #draw the transmitters
         for transmitter in self.transmitters:
-            x_px = int( (transmitter.x + offset_m) * M_TO_PX)
-            y_px = int( (offset_m-transmitter.y) * M_TO_PX)
+            x_px = func_x_to_px(transmitter.x)
+            y_px = func_y_to_px(transmitter.y)
 
             transmitter_color = (0, 0, 255) if transmitter.get_state() == 1 else (255, 0, 0)
 
@@ -213,9 +217,10 @@ class TransceiverUnit():
                 cv2.circle(frame, (x_px, y_px), int((TRANSMITTER_DOT_RADIUS) * M_TO_PX), transmitter_color, -1)
                 triangle_coordinates = [ [x_px,y_px]]
                 for vector in transmitter.VIEW_CONE_VECTORS:
-                    end_x = int( (receiver.x + offset_m + vector[0]*RECEIVER_CONE_SCALE) * M_TO_PX)
-                    end_y = int( (offset_m -(receiver.y + vector[1]*RECEIVER_CONE_SCALE)) * M_TO_PX)
+                    end_x = func_x_to_px(transmitter.x + vector[0]*RECEIVER_CONE_SCALE)
+                    end_y = func_y_to_px(transmitter.y + vector[1]*RECEIVER_CONE_SCALE)
                     triangle_coordinates.append([end_x, end_y])
+   
                 cv2.polylines(frame, [np.array(triangle_coordinates)], isClosed=True, color=transmitter_color, thickness=1)
             else:
                 cv2.circle(frame, (x_px, y_px), int((TRANSMITTER_DOT_RADIUS) * M_TO_PX), transmitter_color, 1)
