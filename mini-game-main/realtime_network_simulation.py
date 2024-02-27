@@ -1,5 +1,5 @@
 import pprint
-from classes.transceiver import TransceiverUnit
+from objects.transceiver import TransceiverUnit
 
 import numpy as np
 import cv2
@@ -32,41 +32,47 @@ base_station = TransceiverUnit(
     id = 0, 
     x=0, 
     y=0, 
-    number_of_sections = 18, 
+    number_of_sections = 6, 
     section_offset_angle = 0, 
     transceiver_radius = 0.17,
     receiver_placement_radius = 0.10,
-    receiver_view_cone_angle = 75.0, 
+    receiver_view_cone_angle = 90, 
     transmitter_placement_radius = 0.15,
-    transmitter_view_cone_angle = 30
+    transmitter_view_cone_angle = 90
 )
 units.append(base_station)
 
 slave_1 = TransceiverUnit(
     id = 1, 
-    x=0.25*3, 
-    y=0.25*3, 
+    x=0.25*-2, 
+    y=0.25*2, 
     number_of_sections = 6, 
-    section_offset_angle = 0, 
+    section_offset_angle = 10, 
     transceiver_radius = 0.17,
     receiver_placement_radius = 0.10,
-    receiver_view_cone_angle = 75.0, 
+    receiver_view_cone_angle = 120, 
     transmitter_placement_radius = 0.15,
-    transmitter_view_cone_angle = 30
+    transmitter_view_cone_angle = 45
 )
-
 
 units.append(slave_1)
 
 counter = 0
 while True:
-    base_station.turn_off_all_transmitters()
 
+    #update simulation
+    base_station.turn_off_all_transmitters()
     base_station.turn_on_transmitter(counter%base_station.get_number_of_transmitters())  
 
-    display_current_frame(units = units, frame_time_ms = 250)
+    #calculate the states
+    for unit in units:
+        unit.update_receiver_states(units)
+
+    #display the current frame
+    display_current_frame(units = units, frame_time_ms = 500)
 
     counter += 1
+
 
 
 cv2.destroyAllWindows()

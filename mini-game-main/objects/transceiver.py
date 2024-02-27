@@ -24,6 +24,12 @@ class Receiver():
     def get_facing_direction(self):
         return self.FACING_DIRECTION
 
+    def set_off(self):
+        self.receiver_state = 0
+    
+    def set_on(self):
+        self.receiver_state = 1
+    
 class Transmitter():
     def __init__(self, transmitter_no:int, x:float, y:float, facing_direction_vector:np.ndarray, view_cone_vectors:list[np.ndarray]):
         self.TRANSMITTER_NO = transmitter_no
@@ -171,7 +177,8 @@ class TransceiverUnit():
         return len(self.transmitters)
     
     def draw_transceiver(self, frame, img_size = None, edge_length_m = None, M_TO_PX = None):
-        RECEIVER_CONE_SCALE = 0.5
+        TRANSMITTER_CONE_SCALE = 1
+        RECEIVER_CONE_SCALE = 0.75
         RECEIVER_DOT_RADIUS= 0.05
         TRANSMITTER_DOT_RADIUS = 0.03
         OFFSET_M = edge_length_m / 2 #same for x and y
@@ -186,7 +193,9 @@ class TransceiverUnit():
         half_px = int((self.TRANSCEIVER_RADIUS/5) * M_TO_PX)   
         cv2.putText(frame, str(self.ID), (x_px-half_px, y_px+half_px), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
-   
+        #cv2.circle(frame, (x_px, y_px), int(RECEIVER_CONE_SCALE * M_TO_PX), (0, 255, 0), 1)
+        #cv2.circle(frame, (x_px, y_px), int(TRANSMITTER_CONE_SCALE * M_TO_PX), (0, 0, 255), 1)
+
        #draw the receivers
         for receiver in self.receivers:
             x_px = func_x_to_px(receiver.x)
@@ -217,13 +226,90 @@ class TransceiverUnit():
                 cv2.circle(frame, (x_px, y_px), int((TRANSMITTER_DOT_RADIUS) * M_TO_PX), transmitter_color, -1)
                 triangle_coordinates = [ [x_px,y_px]]
                 for vector in transmitter.VIEW_CONE_VECTORS:
-                    end_x = func_x_to_px(transmitter.x + vector[0]*RECEIVER_CONE_SCALE)
-                    end_y = func_y_to_px(transmitter.y + vector[1]*RECEIVER_CONE_SCALE)
+                    end_x = func_x_to_px(transmitter.x + vector[0]*TRANSMITTER_CONE_SCALE)
+                    end_y = func_y_to_px(transmitter.y + vector[1]*TRANSMITTER_CONE_SCALE)
                     triangle_coordinates.append([end_x, end_y])
    
                 cv2.polylines(frame, [np.array(triangle_coordinates)], isClosed=True, color=transmitter_color, thickness=1)
             else:
                 cv2.circle(frame, (x_px, y_px), int((TRANSMITTER_DOT_RADIUS) * M_TO_PX), transmitter_color, 1)
+
+    def update_receiver_states(self, units):
+        for receiver in self.receivers:
+            receiver.set_off()
+
+            for unit in units:
+                if unit == self:
+                    continue
+
+                for transmitter in unit.transmitters:
+                    if transmitter.get_state() == 0:
+                        continue                    
+
+                    #=============================================================================================================
+                    #check if the receiver is in the transmitter's view cone
+                    is_receiver_in_transmitters_view_cone = False
+
+                    receiver_pos = receiver.get_position()
+                    transmitter_pos = transmitter.get_position()
+
+                    v_t1, v_t2 = transmitter.get_view_cone_vectors()
+
+                    #receiver_pos + a * v_t1 + b * v_t2 = transmitter_pos
+                    # if A and B are both positive, the receiver is in the view cone
+
+                    #solve the system of equations
+                    A = np.array([
+                        [v_t1[0], v_t2[0]],
+                        [v_t1[1], v_t2[1]]
+                    ])
+                    B = np.array([
+                        receiver_pos[0] - transmitter_pos[0],
+                        receiver_pos[1] - transmitter_pos[1]
+                    ])
+
+                    a, b = np.linalg.solve(A, B)
+
+                    if a > 0 and b > 0:
+                        is_receiver_in_transmitters_view_cone = True
+
+                    #=============================================================================================================
+                    #check if the transmitter is in the receiver's view cone
+                    is_transmitter_in_receivers_view_cone = False
+
+                    v_r1, v_r2 = receiver.get_view_cone_vectors()
+
+                    #transmitter_pos + a * v_r1 + b * v_r2 = receiver_pos
+                    # if A and B are both positive, the transmitter is in the view cone
+
+                    #solve the system of equations
+                    A = np.array([
+                        [v_r1[0], v_r2[0]],
+                        [v_r1[1], v_r2[1]]
+                    ])
+                    B = np.array([
+                        transmitter_pos[0] - receiver_pos[0],
+                        transmitter_pos[1] - receiver_pos[1]
+                    ])
+
+                    a, b = np.linalg.solve(A, B)
+
+                    if a > 0 and b > 0:
+                        is_transmitter_in_receivers_view_cone = True
+
+                    # #=============================================================================================================
+                    # #check if there is an obstacle between the transmitter and the receiver
+                    # is_obstacle_in_between = False
+                    # #TODO: implement this part
+
+                    #=============================================================================================================
+                    if is_receiver_in_transmitters_view_cone and is_transmitter_in_receivers_view_cone:
+                        receiver.set_on()
+                        break
+
+         
+
+
 
 
         
