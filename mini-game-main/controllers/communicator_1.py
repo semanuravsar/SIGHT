@@ -22,7 +22,14 @@ class Communicator_1:
         "listen":{
             "instruction_name":"listen",
             "mode_no":2,
-            "steps": ["listening", "deadtiming_before_replying", "replying"]
+            "steps": [
+                "randomizing_duration",
+                "listening",
+                "deadtiming_before_replying_ping", 
+                "replying_ping", 
+                "listening_the_message"],
+            
+            "listening_duration":[0.1,1]               
         },                 
     }
 
@@ -38,8 +45,13 @@ class Communicator_1:
         self.receiver_states = None   
         self.simulation_time = 0
 
+    def __do_nothing(self):
+        self.TRANSCEIVER.turn_off_all_transmitters()
+        self.TRANSCEIVER.turn_off_all_transmitters()
+        self.instruction = Communicator_1.INSTRUCTIONS["ping"]
+        self.instruction_step = self.instruction["steps"][0]
+
     def __ping(self):
-        print(self.instruction_step)
         if self.instruction_step == "pinging":
             self.TRANSCEIVER.turn_on_all_transmitters()
             ping_duration = self.instruction["ping_duration"]
@@ -96,29 +108,27 @@ class Communicator_1:
             self.TRANSCEIVER.turn_on_all_transmitters()
             message_send_duration = self.instruction["message_send_duration"]
             if self.simulation_time - self.last_time_instruction_changed > message_send_duration:
-                self.instruction = Communicator_1.INSTRUCTIONS["do-nothing"]
+                self.instruction = Communicator_1.INSTRUCTIONS["listen"]
                 self.instruction_step = self.instruction["steps"][0]
                 self.last_time_instruction_changed = self.simulation_time
                 return
-        
+    
+    def __listen(self):
+
+
+        pass
+
     def run_communicator(self, simulation_time:float):
 
         self.TRANSCEIVER.update_instruction_now(self.instruction_step)
         self.simulation_time = simulation_time
-        if self.instruction["instruction_name"] == "do-nothing":
-            self.TRANSCEIVER.turn_off_all_transmitters()
-            self.instruction = Communicator_1.INSTRUCTIONS["ping"]
-            self.instruction_step = self.instruction["steps"][0]
-        if self.instruction["instruction_name"] == "ping":
+        if self.instruction["instruction_name"] == "do-nothing":            
+            self.__do_nothing()
+        elif self.instruction["instruction_name"] == "ping":
             self.__ping()
+        elif self.instruction["instruction_name"] == "listen":
+            self.__listen()
 
-        #update simulation
-
-        # if 
-     
-        # self.TRANSCEIVER.turn_on_transmitter((self.counter//10)%self.NUMBER_OF_TRANSMITTERS)  
-        # self.counter += 1
-        # self.receiver_states = self.transceiver.get_receiver_states()
 
         pass
 
