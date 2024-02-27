@@ -45,7 +45,7 @@ units.append(base_station)
 slave_1 = TransceiverUnit(
     id = 1, 
     x=0.25*-2, 
-    y=0.25*2, 
+    y=0.25*3, 
     number_of_sections = 6, 
     section_offset_angle = 10, 
     transceiver_radius = 0.17,
@@ -63,7 +63,7 @@ while True:
     #update simulation
     base_station.turn_off_all_transmitters()
     base_station.turn_on_transmitter(counter%base_station.get_number_of_transmitters())  
-    #slave_1.move_x_y(0.00, -0.01)
+    slave_1.move_x_y(0.00, -0.002)
     slave_1.rotate(0.5)
 
     #calculate the states

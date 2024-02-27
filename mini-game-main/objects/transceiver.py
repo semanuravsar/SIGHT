@@ -79,8 +79,7 @@ class TransceiverUnit():
         self.__initiliaze_receivers()
         self.__initiliaze_transmitters()
     
-    def move_x_y(self, del_x:float=0, del_y:float=0, section_offset_angle:float = 0.0):
-        self.OFFSET_RAD = math.radians(section_offset_angle)
+    def move_x_y(self, del_x:float=0, del_y:float=0):
         self.x = self.x + del_x
         self.y = self.y + del_y
 
