@@ -8,7 +8,7 @@ class Communicator_1:
             "instruction_name":"do-nothing",
             "mode_no":0,
             "steps": ["randomizing_duration", "delay_before_ping"],
-            "delay_duration":[0.010, 0.050]
+            "delay_duration":[0.015, 0.050]
         },    
         "ping":{
             "instruction_name":"ping",
@@ -31,10 +31,10 @@ class Communicator_1:
                 "replying_ping", 
                 "listening_the_message"],
             
-            "listening_duration":[0.100,0.200],    
+            "listening_duration":[0.750,1.500],    
             "deadtiming_before_replying_ping":0.008, #8ms 
             "replying_ping_duration":0.005, 
-            "listening_the_message_timeout":0.075, # 75ms       
+            "listening_the_message_timeout":0.065, # 75ms       
         },                 
     }
 
@@ -70,13 +70,14 @@ class Communicator_1:
             if self.simulation_time - self.last_time_instruction_changed > self.delay_before_ping:
                 self.instruction = Communicator_1.INSTRUCTIONS["ping"]
                 self.instruction_step = self.instruction["steps"][0]
+                self.last_time_instruction_changed = self.simulation_time
 
             #if the other robots send a ping during this time, the robot should immediately change its instruction to reply-ping state
             receiver_states = self.TRANSCEIVER.get_receiver_states()
             for receiver_state in receiver_states:
                 if receiver_state == 1:
                     self.instruction = Communicator_1.INSTRUCTIONS["listen"]
-                    self.instruction_step = "replying_ping"
+                    self.instruction_step = "deadtiming_before_replying_ping"
                     self.last_time_instruction_changed = self.simulation_time
                     return
 
