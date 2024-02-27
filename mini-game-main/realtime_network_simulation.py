@@ -79,9 +79,9 @@ for unit in units:
 
 #================================================================================================
 # Start the simulation
-iteration_delay_ms = 100
+iteration_delay_ms = 1
 simulation_time = 0
-time_step = 10e-4
+time_step = 1e-4
 
 while True:
 
