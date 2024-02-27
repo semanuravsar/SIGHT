@@ -61,6 +61,8 @@ class Transmitter():
 class TransceiverUnit():
     def __init__(self, id, x:float, y:float, number_of_sections:int, section_offset_angle:float = 0.0, transceiver_radius:float = 0.0, receiver_placement_radius:float = 0.0, receiver_view_cone_angle:float = 75.0, transmitter_placement_radius:float = 0.0, transmitter_view_cone_angle:float = 30.0):
         self.ID = id
+        self.instruction_now = ""
+
         self.TRANSCEIVER_RADIUS = transceiver_radius
         self.NUMBER_OF_SECTIONS = number_of_sections
         self.RAD_PER_SECTION = 2 * math.pi / self.NUMBER_OF_SECTIONS
@@ -79,6 +81,9 @@ class TransceiverUnit():
         self.__initiliaze_receivers()
         self.__initiliaze_transmitters()
     
+    def update_instruction_now(self, instruction_now:str):
+        self.instruction_now = instruction_now
+
     def move_x_y(self, del_x:float=0, del_y:float=0):
         self.x = self.x + del_x
         self.y = self.y + del_y
@@ -255,14 +260,16 @@ class TransceiverUnit():
         robot_front_direction = np.array([math.cos(self.OFFSET_RAD ), math.sin(self.OFFSET_RAD)])
         x_px = func_x_to_px(self.x)
         y_px = func_y_to_px(self.y)
+        
         end_x_px = func_x_to_px(self.x + robot_front_direction[0]*self.TRANSCEIVER_RADIUS*TRANSCEIVER_FRONT_ARROW_SCALE)
         end_y_px = func_y_to_px(self.y + robot_front_direction[1]*self.TRANSCEIVER_RADIUS*TRANSCEIVER_FRONT_ARROW_SCALE)
         cv2.line(frame, (x_px, y_px), (end_x_px, end_y_px), (0, 0, 0), 2)
         
         #draw the ID of the robot
-        half_px = int((self.TRANSCEIVER_RADIUS/5) * M_TO_PX)   
+        half_px = int((self.TRANSCEIVER_RADIUS/5) * M_TO_PX)
+        radius_px = int(self.TRANSCEIVER_RADIUS * M_TO_PX)   
         cv2.putText(frame, str(self.ID), (x_px-half_px, y_px+half_px), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-
+        cv2.putText(frame, self.instruction_now[0:30], (x_px-radius_px, y_px+radius_px+5), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (0, 0, 0), 1)
     def update_receiver_states(self, units):
         for receiver in self.receivers:
             receiver.set_off()

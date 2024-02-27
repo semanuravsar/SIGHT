@@ -4,15 +4,18 @@ import cv2
 from objects.transceiver import TransceiverUnit
 from controllers.communicator_1 import Communicator_1
 
-def display_current_frame(img_size = 750, edge_length_m = 2.75, units = [], obstacles = [], frame_time_ms = 250):    
+def display_current_frame(img_size = 750, edge_length_m = 2.75, units = [], obstacles = [], frame_time_ms = 250, simulation_time = 0):    
     GRID_SIZE = 9
     M_TO_PX = img_size/edge_length_m
-
+    
     frame = np.full((img_size, img_size, 3), 255, dtype=np.uint8)  # Light gray background
+
+    simulation_time_ms = round(1000*simulation_time, 4) 
+    cv2.putText(frame, "Simulation time: " + str(simulation_time_ms) +"ms", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2, cv2.LINE_AA)
     spacing_px = int(img_size / 11)
     cv2.rectangle(frame, (spacing_px, spacing_px), (img_size-spacing_px, img_size-spacing_px), (0, 0, 0), 2)
     # Draw the grid lines
-    for i in range(1, 9):
+    for i in range(1, GRID_SIZE):
         # Vertical lines
         cv2.line(frame, (spacing_px + i * spacing_px, spacing_px), (spacing_px + i * spacing_px, img_size - spacing_px), (0, 0, 0), 1)
         # Horizontal lines
@@ -52,7 +55,7 @@ slave_1 = TransceiverUnit(
     transmitter_placement_radius = 0.15,
     transmitter_view_cone_angle = 45
 )
-units.append(slave_1)
+#units.append(slave_1)
 
 # Initiliaze the communicators of the robots
 communicators = []
@@ -61,8 +64,9 @@ for unit in units:
 
 #================================================================================================
 # Start the simulation
+iteration_delay_ms = 3
 simulation_time = 0
-time_step = 10e-3
+time_step = 10e-5
 
 while True:
 
@@ -72,10 +76,9 @@ while True:
     for communicator in communicators:
         communicator.run_communicator(simulation_time)
         
-    display_current_frame(units = units, frame_time_ms = 10)
+    display_current_frame(units = units, frame_time_ms = iteration_delay_ms, simulation_time = simulation_time)
     simulation_time += time_step
 
-    print("simulation_time: ", simulation_time)
 cv2.destroyAllWindows()
                  
  
