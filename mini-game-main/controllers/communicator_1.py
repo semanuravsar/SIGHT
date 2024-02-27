@@ -1,3 +1,4 @@
+import random
 from objects.transceiver import TransceiverUnit
 
 class Communicator_1:
@@ -13,9 +14,9 @@ class Communicator_1:
             "mode_no":1,
             "steps": ["pinging", "dead_timing_before_waiting_for_reply", "waiting_for_reply", "dead_timing_before_message_sending", "sending_message"],
             "dead_timing_before_waiting_for_reply":0.005, # 5ms
-            "dead_timing_before_message":0.005, # 5ms
             "ping_duration":0.005,
-            "wait_for_reply_duration":0.02,
+            "wait_for_reply_duration":0.025,
+            "dead_timing_before_message":0.010, # 10ms
             "message_send_duration":0.05,
 
         },      
@@ -27,9 +28,14 @@ class Communicator_1:
                 "listening",
                 "deadtiming_before_replying_ping", 
                 "replying_ping", 
+                "waiting_for_start_bit",
                 "listening_the_message"],
             
-            "listening_duration":[0.1,1]               
+            "listening_duration":[0.15,0.5],    
+            "deadtiming_before_replying_ping":0.075, 
+            "replying_ping_duration":0.05, 
+            "waiting_for_start_bit_timeout":0.1, # 100ms
+            "listening_the_message_timeout":0.1, # 100ms       
         },                 
     }
 
@@ -44,6 +50,9 @@ class Communicator_1:
         self.TRANSCEIVER.turn_off_all_transmitters()
         self.receiver_states = None   
         self.simulation_time = 0
+
+
+        self.listen_duration = 0
 
     def __do_nothing(self):
         self.TRANSCEIVER.turn_off_all_transmitters()
@@ -82,14 +91,13 @@ class Communicator_1:
             self.TRANSCEIVER.turn_off_all_transmitters()
             wait_for_reply_duration = self.instruction["wait_for_reply_duration"]
             if self.simulation_time - self.last_time_instruction_changed > wait_for_reply_duration:
-                self.instruction = Communicator_1.INSTRUCTIONS["do-nothing"]
+                self.instruction = Communicator_1.INSTRUCTIONS["listen"]
                 self.instruction_step = self.instruction["steps"][0]
                 self.last_time_instruction_changed = self.simulation_time
                 return
             
             #the other robots should send a repply ping during this time
             receiver_states = self.TRANSCEIVER.get_receiver_states()
-            receiver_states[0] = 1
             for receiver_state in receiver_states:           
                 if receiver_state == 1:
                     self.instruction_step = "dead_timing_before_message_sending"                
@@ -114,13 +122,81 @@ class Communicator_1:
                 return
     
     def __listen(self):
+        if self.instruction_step == "randomizing_duration":
+            self.TRANSCEIVER.turn_off_all_transmitters()
+            min_duration = self.instruction["listening_duration"][0]
+            max_duration = self.instruction["listening_duration"][1]
 
+            self.listen_duration = random.uniform(min_duration, max_duration)
+            self.last_time_instruction_changed = self.simulation_time
+            self.instruction_step = "listening"
+            return
+        elif self.instruction_step == "listening":
+            self.TRANSCEIVER.turn_off_all_transmitters()
+            if self.simulation_time - self.last_time_instruction_changed > self.listen_duration:
+                self.instruction = Communicator_1.INSTRUCTIONS["do-nothing"]
+                self.instruction_step = self.instruction["steps"][0]
+                self.last_time_instruction_changed = self.simulation_time
+                return
 
-        pass
+            #the other robots should send a ping during this time
+            receiver_states = self.TRANSCEIVER.get_receiver_states()
+            for receiver_state in receiver_states:           
+                if receiver_state == 1:
+                    self.instruction_step = "deadtiming_before_replying_ping"                
+                    self.last_time_instruction_changed = self.simulation_time    
+                    break
+        
+        elif self.instruction_step == "deadtiming_before_replying_ping":
+            dead_timing_before_replying_ping = self.instruction["deadtiming_before_replying_ping"]
+            if self.simulation_time - self.last_time_instruction_changed > dead_timing_before_replying_ping:
+                self.TRANSCEIVER.turn_on_all_transmitters()
+                self.instruction_step = "replying_ping"
+                self.last_time_instruction_changed = self.simulation_time
+                return
+            
+        elif self.instruction_step == "replying_ping":
+            self.TRANSCEIVER.turn_on_all_transmitters()
+            reply_duration = self.instruction["replying_ping_duration"]
+            if self.simulation_time - self.last_time_instruction_changed > reply_duration:
+                self.instruction_step = "waiting_for_start_bit"
+                self.last_time_instruction_changed = self.simulation_time
+                return
+            pass
+        elif self.instruction_step == "waiting_for_start_bit":
+            self.TRANSCEIVER.turn_off_all_transmitters()
+            listening_the_message_duration = self.instruction["waiting_for_start_bit_timeout"]
+            
+            #the timeout for listening the message is reached
+            if self.simulation_time - self.last_time_instruction_changed > listening_the_message_duration:
+                self.instruction = Communicator_1.INSTRUCTIONS["do-nothing"]
+                self.instruction_step = self.instruction["steps"][0]
+                self.last_time_instruction_changed = self.simulation_time
+                return
+            
+            #the other robots should start a message-stream during this time
+            receiver_states = self.TRANSCEIVER.get_receiver_states()
+            for receiver_state in receiver_states:           
+                if receiver_state == 1:
+                    self.instruction_step = "listening_the_message"                
+                    self.last_time_instruction_changed = self.simulation_time    
+                    return                    
+        
+        elif self.instruction_step == "listening_the_message":
+            self.TRANSCEIVER.turn_off_all_transmitters()
+            listening_the_message_duration = self.instruction["listening_the_message_timeout"]
+
+            #NOTE: normally the robot should stop listening when the all 8xN bits are sampled 
+            if self.simulation_time - self.last_time_instruction_changed > listening_the_message_duration:
+                self.instruction = Communicator_1.INSTRUCTIONS["do-nothing"]
+                self.instruction_step = self.instruction["steps"][0]
+                self.last_time_instruction_changed = self.simulation_time
+                return
 
     def run_communicator(self, simulation_time:float):
 
-        self.TRANSCEIVER.update_instruction_now(self.instruction_step)
+        self.TRANSCEIVER.update_instruction(self.instruction, self.instruction_step)
+        
         self.simulation_time = simulation_time
         if self.instruction["instruction_name"] == "do-nothing":            
             self.__do_nothing()

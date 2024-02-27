@@ -55,7 +55,22 @@ slave_1 = TransceiverUnit(
     transmitter_placement_radius = 0.15,
     transmitter_view_cone_angle = 45
 )
-#units.append(slave_1)
+units.append(slave_1)
+
+
+slave_2 = TransceiverUnit(
+    id = 2, 
+    x=0.25*2, 
+    y=0.25*3, 
+    number_of_sections = 6, 
+    section_offset_angle = 0, 
+    transceiver_radius = 0.17,
+    receiver_placement_radius = 0.10,
+    receiver_view_cone_angle = 120, 
+    transmitter_placement_radius = 0.15,
+    transmitter_view_cone_angle = 45
+)
+units.append(slave_2)
 
 # Initiliaze the communicators of the robots
 communicators = []
@@ -64,9 +79,9 @@ for unit in units:
 
 #================================================================================================
 # Start the simulation
-iteration_delay_ms = 3
+iteration_delay_ms = 100
 simulation_time = 0
-time_step = 10e-5
+time_step = 10e-4
 
 while True:
 
