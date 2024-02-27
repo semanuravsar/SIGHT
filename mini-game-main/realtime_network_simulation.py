@@ -1,9 +1,8 @@
 import pprint
-from objects.transceiver import TransceiverUnit
-
 import numpy as np
 import cv2
-
+from objects.transceiver import TransceiverUnit
+from controllers.communicator_1 import Communicator_1
 
 def display_current_frame(img_size = 750, edge_length_m = 2.75, units = [], obstacles = [], frame_time_ms = 250):    
     GRID_SIZE = 9
@@ -25,9 +24,8 @@ def display_current_frame(img_size = 750, edge_length_m = 2.75, units = [], obst
     cv2.imshow('simulation', frame)
     cv2.waitKey(frame_time_ms)
     
-
+# Create robots
 units = []
-
 base_station = TransceiverUnit(
     id = 0, 
     x=0, 
@@ -47,36 +45,37 @@ slave_1 = TransceiverUnit(
     x=0.25*-2, 
     y=0.25*3, 
     number_of_sections = 6, 
-    section_offset_angle = 10, 
+    section_offset_angle = 0, 
     transceiver_radius = 0.17,
     receiver_placement_radius = 0.10,
     receiver_view_cone_angle = 120, 
     transmitter_placement_radius = 0.15,
     transmitter_view_cone_angle = 45
 )
-
 units.append(slave_1)
 
-counter = 0
+# Initiliaze the communicators of the robots
+communicators = []
+for unit in units:
+    communicators.append(Communicator_1(unit))
+
+#================================================================================================
+# Start the simulation
+simulation_time = 0
+time_step = 10e-3
+
 while True:
 
-    #update simulation
-    base_station.turn_off_all_transmitters()
-    base_station.turn_on_transmitter(counter%base_station.get_number_of_transmitters())  
-    slave_1.move_x_y(0.00, -0.002)
-    slave_1.rotate(0.5)
-
-    #calculate the states
     for unit in units:
         unit.update_receiver_states(units)
 
-    #display the current frame
+    for communicator in communicators:
+        communicator.run_communicator(simulation_time)
+        
     display_current_frame(units = units, frame_time_ms = 10)
+    simulation_time += time_step
 
-    counter += 1
-
-
-
+    print("simulation_time: ", simulation_time)
 cv2.destroyAllWindows()
                  
  

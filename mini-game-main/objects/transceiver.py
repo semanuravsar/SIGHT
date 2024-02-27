@@ -148,10 +148,20 @@ class TransceiverUnit():
             raise ValueError("Transmitter number is out of range")        
         self.transmitters[transmitter_no].turn_on()
     
+    def turn_off_transmitter(self, transmitter_no:int):
+        if transmitter_no >= len(self.transmitters) or transmitter_no < 0:
+            raise ValueError("Transmitter number is out of range")
+        
+        self.transmitters[transmitter_no].turn_off()
+
     def turn_off_all_transmitters(self):
         for transmitter in self.transmitters:
             transmitter.turn_off()
 
+    def turn_on_all_transmitters(self):
+        for transmitter in self.transmitters:
+            transmitter.turn_on()
+        
     def get_transceiver_info(self):
         return_dict = {
             "id": self.ID,
@@ -326,6 +336,8 @@ class TransceiverUnit():
                         receiver.set_on()
                         break
 
+    def get_receiver_states(self):
+        return [receiver.get_state() for receiver in self.receivers]
          
 
 
