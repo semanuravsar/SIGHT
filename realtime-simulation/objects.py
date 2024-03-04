@@ -98,7 +98,7 @@ class Robot():
 
                 for i, placement_angle in enumerate(PLACEMENT_ANGLES):                 
                     rotated_relative_position_vector = np.ext_rotate_vector(  np.array([PLACEMENT_RADIUS, 0.0]), placement_angle)
-                    ultrasonic_sensor_i = UltrasonicSensor(robot_object=self, sensor_id = i, relative_position_vector=rotated_relative_position_vector, range = ULTRASONIC_RANGE)
+                    ultrasonic_sensor_i = UltrasonicSensor(robot_object=self, sensor_id = i, relative_position_vector=rotated_relative_position_vector, range = ULTRASONIC_RANGE, view_angle= VIEW_ANGLE)
                     if(self.VERBOSE): print(ultrasonic_sensor_i)
                     self.ultrasonic_sensors_list.append(ultrasonic_sensor_i)
 
@@ -169,9 +169,15 @@ class Robot():
         for transmitter in self.get_transmitters_list():
             transmitter.set_all_game_objects(all_game_objects = all_game_objects)
 
+        for ultrasonic_sensor in self.get_ultrasonic_sensors_list():
+            ultrasonic_sensor.set_all_game_objects(all_game_objects = all_game_objects)
+
     def test(self):
         for receiver in self.get_receivers_list():
             receiver.update()
+
+        for ultrasonic_sensor in self.get_ultrasonic_sensors_list():
+            ultrasonic_sensor.update()
                                                         
 class Sensor():
 
@@ -333,13 +339,52 @@ class Receiver(Sensor):
                     self.set_receiver_output(1) 
                        
 class UltrasonicSensor(Sensor):
-    def __init__(self, robot_object: Robot = None, sensor_id:int = None, relative_position_vector: np.ndarray = None , range:float=None) -> None:
+    def __init__(self, robot_object: Robot = None, sensor_id:int = None, relative_position_vector: np.ndarray = None , range:float=None, view_angle:float=None) -> None:
         #initilize the parent class
         super().__init__(robot_object=robot_object, sensor_id=sensor_id, relative_position_vector=relative_position_vector)
         
-        self.DETECTION_RANGE = range #  the maximum distance in meters that the sensor can detect
+        self.MAX_DETECTION_RANGE = range #  the maximum distance in meters that the sensor can detect
+        self.VIEW_ANGLE = view_angle
 
-        self.ultrasonic_sensor_output = range #  the detected distance in meters
+        self.ultrasonic_sensor_measured_distance = None #  the detected distance in meters
+
+    def update(self) -> bool:
+        """
+        updates the receiver output according to whether the receiver is receiving a signal from the other robot considering the view angle and the obstacles
+        """   
+        self.ultrasonic_sensor_measured_distance = self.MAX_DETECTION_RANGE
+        ultrasonic_sensor_position = self.get_position()
+
+        ultrasonic_sensor_lagging_vector = np.ext_rotate_vector(self.get_relative_position_vector(), -self.VIEW_ANGLE/2)
+        ultrasonic_sensor_leading_vector = np.ext_rotate_vector(self.get_relative_position_vector(), self.VIEW_ANGLE/2)
+
+        for game_object in self.ALL_GAME_OBJECTS:
+            if (isinstance(game_object, Robot) and game_object != self.ROBOT_OBJECT) or isinstance(game_object, Obstacle):                
+            
+                object_position = game_object.get_position()        
+                sensor_to_object_vector = object_position - ultrasonic_sensor_position
+                vector_length = np.linalg.norm(sensor_to_object_vector)
+
+                # check if the object is within the view angle of the sensor (i.e positive linear combination of the right and left vectors of the sensor can be used to reach the position of the object)
+                A = np.array([
+                    [ultrasonic_sensor_lagging_vector[0], ultrasonic_sensor_leading_vector[0]],
+                    [ultrasonic_sensor_lagging_vector[1], ultrasonic_sensor_leading_vector[1]]
+                ]
+                )
+                B = np.array([
+                    sensor_to_object_vector[0],
+                    sensor_to_object_vector[1]
+                ])
+                a, b = np.linalg.solve(A, B)
+                if a>=0 and b>=0:
+                    if vector_length < self.ultrasonic_sensor_measured_distance:
+                        self.ultrasonic_sensor_measured_distance = vector_length
+                    else:
+                        #there is already an object that is closer to the sensor
+                        pass
+    
+
+
 
     def __str__(self):
         return f"Robot {self.ROBOT_OBJECT.get_id()} | UltrasonicSensor: {self.get_sensor_id()}, relative position: {self.get_relative_position_vector()}"
@@ -364,10 +409,10 @@ if __name__ == "__main__":
             "beam_angle": 45
         },
         "ultrasonic_sensor": {
-            "placement_angles": [-45, 0, 45],
+            "placement_angles": [-90,0 , 90],
             "ultrasonic_sensor_placement_radius": 0.10,
-            "view_angle": 45,
-            "range":0.5
+            "view_angle": 20,
+            "range":1.0
         }
     }
 
@@ -377,7 +422,7 @@ if __name__ == "__main__":
     robot_object_2 = Robot( id=2, collision_radius = 0.1, position = np.array([0.5, 0.0]), sensor_dict= sensor_dict, verbose = False)
     all_game_objects.append(robot_object_2)
 
-    obstacle_1= Obstacle(id=1, collision_radius = 0.05, position = np.array([0.25, 0.25]), )
+    obstacle_1= Obstacle(id=1, collision_radius = 0.05, position = np.array([0.25, 0]), )
     all_game_objects.append(obstacle_1)
 
     for game_object in all_game_objects:
