@@ -10,8 +10,15 @@ def ____rotate_vector(vector: np.ndarray, angle_degrees: float) -> np.ndarray:
     return rotation_matrix @ vector    
 np.ext_rotate_vector = ____rotate_vector # Add the function to the numpy module
 
-#======================================================================================================================
 
+def ensure_updated_decorator(f):
+    # A decorator that ensures that the sensor output is updated before reading it
+    def wrapper(self, *args, **kwargs):
+        self.update()
+        return f(self, *args, **kwargs)
+    return wrapper
+
+#======================================================================================================================
 class Obstacle():
     def __init__(self, id:int = None, position: np.ndarray = None, collision_radius:float=None) -> None:
         self.ID = id
@@ -174,10 +181,12 @@ class Robot():
 
     def test(self):
         for receiver in self.get_receivers_list():
-            receiver.update()
+            r = receiver.read_receiver_output()
+            print(f"Receiver {receiver.get_sensor_id()} output: {r}")
 
         for ultrasonic_sensor in self.get_ultrasonic_sensors_list():
-            ultrasonic_sensor.update()
+            r = ultrasonic_sensor.measure_distance()
+            print(f"Ultrasonic sensor {ultrasonic_sensor.get_sensor_id()} output: {r}")
                                                         
 class Sensor():
 
@@ -252,7 +261,8 @@ class Receiver(Sensor):
 
     def __str__(self):
         return f"Robot {self.ROBOT_OBJECT.get_id()} | Receiver: {self.get_sensor_id()}, relative position: {self.get_relative_position_vector()}"
-
+    
+    @ensure_updated_decorator
     def read_receiver_output(self):
         return self.receiver_output
     
@@ -263,7 +273,7 @@ class Receiver(Sensor):
         """
         updates the receiver output according to whether the receiver is receiving a signal from the other robot considering the view angle and the obstacles
         """   
-    
+        self.set_receiver_output(1) # 1: not detecting any signal
         for game_object in self.ALL_GAME_OBJECTS:
             if isinstance(game_object, Robot) and game_object != self.ROBOT_OBJECT:                
                 is_receiver_receiving_signal = False
@@ -334,9 +344,8 @@ class Receiver(Sensor):
                                 break                                
 
                 if is_receiver_receiving_signal:
-                    self.set_receiver_output(0)
-                else:
-                    self.set_receiver_output(1) 
+                    self.set_receiver_output(0)    
+                    break        
                        
 class UltrasonicSensor(Sensor):
     def __init__(self, robot_object: Robot = None, sensor_id:int = None, relative_position_vector: np.ndarray = None , range:float=None, view_angle:float=None) -> None:
@@ -347,6 +356,10 @@ class UltrasonicSensor(Sensor):
         self.VIEW_ANGLE = view_angle
 
         self.ultrasonic_sensor_measured_distance = None #  the detected distance in meters
+
+    @ensure_updated_decorator
+    def measure_distance(self):
+        return self.ultrasonic_sensor_measured_distance
 
     def update(self) -> bool:
         """
@@ -382,9 +395,6 @@ class UltrasonicSensor(Sensor):
                     else:
                         #there is already an object that is closer to the sensor
                         pass
-    
-
-
 
     def __str__(self):
         return f"Robot {self.ROBOT_OBJECT.get_id()} | UltrasonicSensor: {self.get_sensor_id()}, relative position: {self.get_relative_position_vector()}"
@@ -397,7 +407,7 @@ if __name__ == "__main__":
 
     sensor_dict = {
         "receiver": {
-            "number_of_receivers": 1,
+            "number_of_receivers": 4,
             "receiver_placement_radius": 0.05,
             "receiver_placement_offset_angle":0,
             "view_angle": 45
@@ -422,7 +432,7 @@ if __name__ == "__main__":
     robot_object_2 = Robot( id=2, collision_radius = 0.1, position = np.array([0.5, 0.0]), sensor_dict= sensor_dict, verbose = False)
     all_game_objects.append(robot_object_2)
 
-    obstacle_1= Obstacle(id=1, collision_radius = 0.05, position = np.array([0.25, 0]), )
+    obstacle_1= Obstacle(id=1, collision_radius = 0.05, position = np.array([0.25, 50]), )
     all_game_objects.append(obstacle_1)
 
     for game_object in all_game_objects:
@@ -430,5 +440,6 @@ if __name__ == "__main__":
             game_object.set_all_game_objects(all_game_objects = all_game_objects)
 
     robot_object_1.test()
+    robot_object_2.test()
 
 
