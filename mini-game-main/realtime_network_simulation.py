@@ -33,7 +33,7 @@ base_station = TransceiverUnit(
     id = 0, 
     x=0, 
     y=0, 
-    number_of_sections = 8, 
+    number_of_sections = 6, 
     section_offset_angle = 0, 
     transceiver_radius = 0.17,
     receiver_placement_radius = 0.10,
@@ -47,7 +47,7 @@ slave_1 = TransceiverUnit(
     id = 1, 
     x=0.25*-3, 
     y=0.25*3, 
-    number_of_sections = 8, 
+    number_of_sections = 6, 
     section_offset_angle = 0, 
     transceiver_radius = 0.17,
     receiver_placement_radius = 0.10,
@@ -62,7 +62,7 @@ slave_2 = TransceiverUnit(
     id = 2, 
     x=0.25*2, 
     y=0.25*3, 
-    number_of_sections = 8, 
+    number_of_sections = 6, 
     section_offset_angle = 0, 
     transceiver_radius = 0.17,
     receiver_placement_radius = 0.10,
@@ -76,13 +76,13 @@ slave_3 = TransceiverUnit(
     id = 3, 
     x=0.25*4, 
     y=0.25*-1, 
-    number_of_sections = 8, 
+    number_of_sections = 6, 
     section_offset_angle = 0,
     transceiver_radius = 0.17,
     receiver_placement_radius = 0.10,
     receiver_view_cone_angle = 120,
     transmitter_placement_radius = 0.15,
-    transmitter_view_cone_angle = 40
+    transmitter_view_cone_angle = 90
 )
 units.append(slave_3)
 
@@ -93,13 +93,14 @@ for unit in units:
 
 #================================================================================================
 # Start the simulation
-iteration_delay_ms = 3
+iteration_delay_ms = 10
 simulation_time = 0
 time_step = 5e-5
 
 
 while True:
 
+    #base_station.move_x_y(0.0000,-0.0002)
     for unit in units:
         unit.update_receiver_states(units)
 

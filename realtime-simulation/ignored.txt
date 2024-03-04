@@ -1,0 +1,1 @@
+# The ultrasonic sensors operate under the same frequency. Thus, one sensor can interfere with the other. This fact is ignored in this code.
