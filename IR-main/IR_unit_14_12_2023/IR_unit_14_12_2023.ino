@@ -7,7 +7,7 @@ void setup() {
 }
 
 void loop() {
-communication_test();
+  communication_test();
 }
 
 
@@ -21,7 +21,7 @@ void communication_test() {
     succesful_package_counter = succesful_package_counter + 1;
   } else if (listening_result == 2) {
     corrupted_package_counter = corrupted_package_counter + 1;
-  } else if (listening_result == 0){
+  } else if (listening_result == 0) {
     //pass (no data is received)
   }
 
@@ -31,6 +31,7 @@ void communication_test() {
 
     if (incoming_byte == 'S') {
       Serial.println("Sending the data...");
+      uint16_t counter = 0;
       for (uint16_t i = 0; i < 256; i++) {
         for (uint16_t j = 0; j < number_of_package_bytes - 2; j++) {
           set_buffer(j, i);
@@ -42,7 +43,7 @@ void communication_test() {
         set_buffer(number_of_package_bytes - 1, CRC_LST);
         transmit_buffer();
         Serial.println(String(i) + " / " + String(255));
-        delay(20);
+        delay(25);
       }
       Serial.println("Transmitting process is completed.");
     } else if (incoming_byte == 'B') {

@@ -4,7 +4,6 @@
 #define IR_LED 5
 
 //delayMicroseconds() very accurately in the range 3 microseconds and up to 16383. Be careful if you are not in this range
-#define K_NUMBER_OF_BURSTS 60
 #define BURST_HALF_PERIOD_US 13
 #define LISTEN_DURATION_MS 20
 #define TRANSMIT_SLEEP_TIME 20
@@ -87,19 +86,28 @@ void transmit_one() {
 uint8_t listen_IR() {
 
   unsigned long listen_start_time = millis();
-  uint8_t counter = 0;
+  // uint8_t counter = 0;
+  // while (millis() - listen_start_time < LISTEN_DURATION_MS) {
+  //   if (digitalRead(IR_RECEIVE_PIN) == 0) {
+  //     delayMicroseconds(BURST_HALF_PERIOD_US);
+  //     counter = counter + 1;
+  //     if (counter > 5) {
+  //       break;
+  //     }
+  //   }
+  // }
+
+
+  uint8_t is_received = 0;
   while (millis() - listen_start_time < LISTEN_DURATION_MS) {
     if (digitalRead(IR_RECEIVE_PIN) == 0) {
-      delayMicroseconds(BURST_HALF_PERIOD_US);
-      counter = counter + 1;
-      if (counter > 5) {
-        break;
-      }
+      is_received = 1;
+      break;
     }
   }
 
   //check if transmission is detected
-  if (counter > 5) {
+  if (is_received == 1 ) {
     delayMicroseconds(TRIGGER_DURATION_US * 1.5);
     unsigned long listen_starts = micros();
     for (uint8_t i = 0; i < (NUMBER_OF_PACKAGE_BYTES * 8); i++) {
