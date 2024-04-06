@@ -18,7 +18,7 @@ float elapsedTime, currentTime, previousTime;
 float yaw;
 int angle;
 int initialAngle = 0;
-int targetAngle = 50;
+int targetAngle = 0;
 int error;
 float previousError = 0;
 float accError;
@@ -31,7 +31,10 @@ int  rightSpeedVal = baseSpeed;
 const int maxSpeed = 196; //max PWM value written to motor speed pin. It is typically 255.
 const int minSpeed = 64;
 int c = 0;
- //min PWM value at which motor moves
+bool moveRobot = true;
+  
+
+
  
 
   void setup() {
@@ -76,11 +79,28 @@ bool isStationary(float thresholdGyro = 2.0) {
     return false;
 }
   void loop() {
-  // put your main code here, to run repeatedly:
-  readGyro(); // Continues to update gyro readings
-    if (isStationary()) { // Checks if the robot has been stationary for the specified duration
-        caliber(); // Performs recalibration if stationary
+  static unsigned long previousMillis = 0;
+  const unsigned long interval = 3000; // 5 seconds in milliseconds
+
+  unsigned long currentMillis = millis();
+
+  // Check if 5 seconds have elapsed
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis; // Reset the timer
+
+    // Update the target angle
+    targetAngle += 90;
+    if (targetAngle >= 360) {
+      targetAngle -= 360; // Wrap around if targetAngle exceeds 360
     }
+
+    // Print the updated target angle
+    Serial.print("Target Angle Updated: ");
+    Serial.println(targetAngle);
+  }
+
+  readGyro(); // Continues to update gyro readings
+
     GyroZReal = GyroZ - biasZ;
   // finds time
   previousTime = currentTime;  
@@ -90,13 +110,29 @@ bool isStationary(float thresholdGyro = 2.0) {
       yaw += + GyroZReal * elapsedTime;
   }
   angle = initialAngle + (round(yaw)) % 360;
-  
-  controller();
-  Serial.print("angle ;");
-  Serial.println(angle);
 
-  rotate();
-}
+  controller();
+
+if (error < -2 || error > 2) {
+        // If there is an error, rotate the robot
+        moveRobot = false;
+        stop();
+        rotate();
+        
+
+    } else {
+        // If the error is within the desired range, start moving the robot
+        moveRobot = true;
+    }
+
+    // Move or stop the robot based on the flag
+    if (moveRobot) {
+        forward(); // Or any other movement function you want to call
+    } else {
+        stop(); // Stop the robot while rotating
+    }
+
+  }
 
 
 
@@ -137,25 +173,25 @@ bool isStationary(float thresholdGyro = 2.0) {
   GyroX = (Wire.read() << 8 | Wire.read()) / 131.0;
   GyroY = (Wire.read() << 8 | Wire.read()) / 131.0;
   GyroZ = (Wire.read() << 8 | Wire.read()) / 131.0;
+  delay(10);
 }
 
 
   void rotate() {
-    if (abs(error) < 3){
+    if (abs(error) < 2){
       stop();
     } else {
-    if (error < -3) { //turn left
+    if (error < -2) { //turn right
       right();
-      leftSpeedVal = changeSpeed(leftSpeedVal, +1);
+      //leftSpeedVal = changeSpeed(leftSpeedVal, +1);
       rightSpeedVal =  changeSpeed(rightSpeedVal, -1);
       
-    } else if (error > 3) {//turn right
+    } else if (error > 2) {//turn left
       left();
-      leftSpeedVal =  changeSpeed(leftSpeedVal, -1);
+      //leftSpeedVal =  changeSpeed(leftSpeedVal, -1);
       rightSpeedVal = changeSpeed(rightSpeedVal, +1);
     }
-    analogWrite(rightSpeed, rightSpeedVal);
-    analogWrite(leftSpeed, leftSpeedVal);
+
 
       
       
@@ -164,17 +200,17 @@ bool isStationary(float thresholdGyro = 2.0) {
     }
     
 
-
-
-
-
   int changeSpeed (int motorSpeed, int increment){
-  motorSpeed += increment;
+
+    motorSpeed += increment;
+
+
   if (motorSpeed > maxSpeed){ //to prevent motorSpeed from exceeding 255, which is a problem when using analogWrite
     motorSpeed = maxSpeed;
   } else if (motorSpeed < minSpeed){
     motorSpeed = minSpeed;
   }
+  delay(20);
   return motorSpeed;
 }
 
@@ -192,6 +228,8 @@ void forward(){ //drives the car forward, assuming leftSpeedVal and rightSpeedVa
   digitalWrite(right2, LOW);
   digitalWrite(left1, HIGH);
   digitalWrite(left2, LOW);
+  analogWrite(rightSpeed, rightSpeedVal);
+  analogWrite(leftSpeed, leftSpeedVal);
 }
 
 void left(){ //rotates the car left, assuming speed leftSpeedVal and rightSpeedVal are set high enough
@@ -199,6 +237,8 @@ void left(){ //rotates the car left, assuming speed leftSpeedVal and rightSpeedV
   digitalWrite(right2, HIGH);
   digitalWrite(left1, HIGH);
   digitalWrite(left2, LOW);
+  analogWrite(rightSpeed, rightSpeedVal);
+  analogWrite(leftSpeed, leftSpeedVal);
 }
 
 void right(){
@@ -206,6 +246,8 @@ void right(){
   digitalWrite(right2, LOW);
   digitalWrite(left1, LOW);
   digitalWrite(left2, HIGH);
+  analogWrite(rightSpeed, rightSpeedVal);
+  analogWrite(leftSpeed, leftSpeedVal);
 }
 
 
