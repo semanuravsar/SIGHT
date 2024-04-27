@@ -1,10 +1,12 @@
 uint8_t analog_pins[6] = { A0, A1, A2, A3, A4, A5 };  // A0-> 2 (left) A5->7 (right)Define the analog input pins
-#define rightMotor1 13
+#define rightMotor1 13                                //right motor 240RPM
 #define rightMotor2 12
+#define right_pwm_normalizer 1
 #define rightMotorPWM 11
-#define leftMotor1 8
+#define leftMotor1 8  //right motor 320RPM
 #define leftMotor2 7
 #define leftMotorPWM 10
+#define left_pwm_normalizer 0.75
 /*  digitalWrite(rightMotor1,HIGH);
     digitalWrite(rightMotor2, LOW); right motor forward
 
@@ -27,16 +29,30 @@ void setup() {
 }
 
 unsigned int threshold = 710;  // Threshold for detecting black
-
 void loop() {
   update_black_detections(750);
-  test_print_is_black_array();
   Serial.println(get_line_pos());
 
-  drive_left_motor_at(255, 25, 1);
-  drive_right_motor_at(255, 25, 1);
-}
+  uint8_t base_pwm = 127;
 
+  float line_position = get_line_pos();
+  if (line_position == -999) {
+    Serial.println("No line is found");
+    drive_left_motor_at(0, 20, 1);
+    drive_right_motor_at(0, 20, 1);
+  } else if (line_position > 0) {
+    int left_pwm = int(base_pwm * left_pwm_normalizer);
+    int right_pwm = int((base_pwm + 2 * line_position * line_position * line_position) * right_pwm_normalizer);
+    drive_left_motor_at(left_pwm, 1, 1);
+    drive_right_motor_at(right_pwm, 1, 1);
+  } else {
+    line_position = -line_position;
+    int left_pwm = int((base_pwm + 2 * line_position * line_position * line_position) * left_pwm_normalizer);
+    int right_pwm = int(base_pwm * right_pwm_normalizer);
+    drive_left_motor_at(left_pwm, 1, 1);
+    drive_right_motor_at(right_pwm, 1, 1);
+  }
+}
 
 uint8_t is_black[6] = { 0, 0, 0, 0, 0, 0 };
 uint8_t update_black_detections(int black_threshold) {
@@ -51,6 +67,7 @@ uint8_t update_black_detections(int black_threshold) {
   }
 }
 float get_line_pos() {
+
   int sensor_coefficients[6] = { -3, -2, -1, 1, 2, 3 };
   float pos_value = 0;
   uint8_t black_counter = 0;
