@@ -1,4 +1,4 @@
-uint8_t analog_pins[6] = {A0, A1, A2, A3, A4, A5};  // A0-> 2 (left) A5->7 (right)Define the analog input pins, 4 D1, 5 D7
+uint8_t analog_pins[6] = { A0, A1, A2, A3, A4, A5 };  // A0-> 2 (left) A5->7 (right)Define the analog input pins, 4 D1, 5 D7
 #define rightMotor1 13                                //right motor 240RPM
 #define rightMotor2 12
 #define right_pwm_normalizer 1
@@ -7,6 +7,8 @@ uint8_t analog_pins[6] = {A0, A1, A2, A3, A4, A5};  // A0-> 2 (left) A5->7 (righ
 #define leftMotor2 7
 #define leftMotorPWM 10
 #define left_pwm_normalizer 0.75
+float last_position = 0;
+uint8_t base_pwm = 75;
 /*  digitalWrite(rightMotor1,HIGH);
     digitalWrite(rightMotor2, LOW); right motor forward
 
@@ -28,36 +30,45 @@ void setup() {
   }
 }
 
-unsigned int threshold = 710;  // Threshold for detecting black
+unsigned int threshold = 900;  // Threshold for detecting black
 void loop() {
-  update_black_detections(750);
+  update_black_detections(threshold);
   //Serial.println(get_line_pos());
-  test_print_is_black_array() ;
-  
+  test_print_is_black_array();
 
-  uint8_t base_pwm = 90;
+
+
 
   float line_position = get_line_pos();
-   Serial.println(line_position);
+
   if (line_position == -999) {
     Serial.println("No line is found");
-    drive_left_motor_at(0, 10, 5);
-    drive_right_motor_at(0, 10, 5);
-  } else if (line_position > 0) {
+
+    if (last_position > 0) {
+    rotate_cw();
+  } else {
+    rotate_ccw();
+  }
+  }
+
+
+  else if (line_position > 0) {
     int right_pwm = int(base_pwm * right_pwm_normalizer);
-    int left_pwm = int((base_pwm + 1.5 * line_position * line_position* line_position) * left_pwm_normalizer);
-    drive_left_motor_at(left_pwm, 1, 255);
-    drive_right_motor_at(right_pwm, 1, 255);
+    int left_pwm = int((base_pwm + 1.5 * line_position * line_position * line_position) * left_pwm_normalizer);
+    drive_left_motor_at(left_pwm, 25, 1);
+    drive_right_motor_at(right_pwm, 25, 1);
+    last_position = line_position ;
   } else {
     line_position = -line_position;
-    int right_pwm = int((base_pwm + 1.5 * line_position * line_position* line_position) * right_pwm_normalizer);
+    int right_pwm = int((base_pwm + 1.5 * line_position * line_position * line_position) * right_pwm_normalizer);
     int left_pwm = int(base_pwm * left_pwm_normalizer);
-    drive_left_motor_at(left_pwm, 1, 255);
-    drive_right_motor_at(right_pwm, 1, 255);
+    drive_left_motor_at(left_pwm, 25, 1);
+    drive_right_motor_at(right_pwm, 25, 1);
+    last_position = -line_position;
   }
 }
 
-uint8_t is_black[6] = {0, 0, 0, 0, 0, 0};
+uint8_t is_black[6] = { 0, 0, 0, 0, 0, 0 };
 uint8_t update_black_detections(int black_threshold) {
   //uint8_t analog_pins[6] = {A0, A1, A2, A3, A4, A5}; // A0-> 2 (left) A5->7 (right)Define the analog input pins
   //right -> 2, left ->7
@@ -68,11 +79,9 @@ uint8_t update_black_detections(int black_threshold) {
     if (analog_value > black_threshold) digital_val = 1;
     is_black[i] = digital_val;
   }
-
-
 }
 float get_line_pos() {
-  int sensor_coefficients[6] = {3,2,1,-1,-2,-3};
+  int sensor_coefficients[6] = { 3, 2, 1, -1, -2, -3 };
   float pos_value = 0;
   uint8_t black_counter = 0;
 
@@ -80,15 +89,15 @@ float get_line_pos() {
     if (is_black[i]) {
       pos_value = pos_value + sensor_coefficients[i];
       black_counter = black_counter + 1;
-  }
+    }
   }
 
-  if (black_counter!=0) {
+  if (black_counter != 0) {
     pos_value = pos_value / black_counter;
+  } else {
+    pos_value = -999;
   }
-   else  {
-    pos_value = -999; } 
-    //no line is found
+  //no line is found
 
   return pos_value;
 }
@@ -151,3 +160,19 @@ void drive_left_motor_at(int pwm_val, int update_period_ms, uint8_t delta_pwm_pe
   }
 }
 
+void rotate_cw() {
+  digitalWrite(leftMotor1, LOW);
+  digitalWrite(leftMotor2, HIGH);
+  analogWrite(leftMotorPWM, base_pwm);
+  digitalWrite(rightMotor1, LOW);
+  digitalWrite(rightMotor2, HIGH);
+  analogWrite(rightMotorPWM, base_pwm);
+}
+void rotate_ccw() {
+  digitalWrite(leftMotor1, HIGH);
+  digitalWrite(leftMotor2, LOW);
+  analogWrite(leftMotorPWM, base_pwm);
+  digitalWrite(rightMotor1, HIGH);
+  digitalWrite(rightMotor2, LOW);
+  analogWrite(rightMotorPWM, base_pwm);
+}
