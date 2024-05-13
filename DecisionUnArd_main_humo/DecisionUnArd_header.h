@@ -25,8 +25,12 @@ Position nextMove(Position buPosition, Position currentPosition, Position target
 Position move_to_BU(Position buPosition, Position currentPosition, Position obstacles[], int obstacleCount);
 Position searcher(Position buPosition, Position currentPosition, Position obstacles[], int obstacleCount, int mu_info_matrix[GRID_SIZE][GRID_SIZE]);
 Position move_to_target_MU1(Position buPosition, Position currentPosition, Position targetPosition, Position obstacles[], int obstacleCount, int& state);
-Position move_decider_MU1(Position buPosition, Position currentPosition, Position targetPosition, Position obstacles[], int obstacleCount,int mu_info_matrix[GRID_SIZE][GRID_SIZE],int& state);
+Position move_decider_MU1(Position buPosition, Position currentPosition, Position targetPosition, Position obstacles[], int obstacleCount,int mu_info_matrix[GRID_SIZE][GRID_SIZE],int& state,int bu_link);
 bool isObstacle(Position position, Position obstacles[], int obstacleCount);
+bool unscannedTileLeft(const int matrix[GRID_SIZE][GRID_SIZE]);
+Position RFID_position_result();
+void clearSerialBuffer();
+
 // bool isTarget = RFID_reader(Position& currentPosition);
 // bool collision_risk = Ultrasonic_Collision_Check();
 

@@ -316,4 +316,54 @@ return nextMoveResult;
 
 }
 
+Position RFID_position_result(){
+
+  Position position_result;
+  // If we had failure to read then return -1,-1 to incdicate mistake
+  position_result.x = -1;
+  position_result.y = -1; 
+
+  byte block = 14;
+  byte buffer[18];
+  byte size = sizeof(buffer);
+  MFRC522::MIFARE_Key key;
+
+  for (byte i = 0; i < 6; i++) key.keyByte[i] = 0xFF;
+
+  if (rfid.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, block, &key, &rfid.uid) != MFRC522::STATUS_OK) {
+    Serial.println("Authentication failed");
+    return position_result;
+  }
+
+  if (rfid.MIFARE_Read(block, buffer, &size) != MFRC522::STATUS_OK) {
+    Serial.println("Read failed");
+    return position_result;
+  } else {
+    position_result.x = buffer[0];
+    position_result.y = buffer[1];
+    
+    return position_result;  // Return 0 if coordinates don't match any predefined pairs
+  }
+
+}
+
+// Function to check if all elements in the matrix are non-zero
+bool unscannedTileLeft(const int matrix[GRID_SIZE][GRID_SIZE]) {
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            if (matrix[i][j] == 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+
+void clearSerialBuffer() {
+  while (Serial.available() > 0) {
+    Serial.read();
+  }
+}
 

@@ -129,39 +129,39 @@ Position nextMove(Position buPosition, Position currentPosition, Position aimedP
 
 Position searcher(Position buPosition, Position currentPosition, Position obstacles[], int obstacleCount, int mu_info_matrix[GRID_SIZE][GRID_SIZE]) {
 
-Position aimedPosition; // Will be input to the next_move_function
-int distance_matrix[GRID_SIZE][GRID_SIZE];
-
-for (int i = 0; i < GRID_SIZE; i++) {
-    for (int j = 0; j < GRID_SIZE; j++) {
-
-      // Calculating the distances (Note that the value we multiply may change if it isn't sufficient)
-      distance_matrix[i][j] = abs(currentPosition.x - i) + abs(currentPosition.y - j) + 10*mu_info_matrix[i][j];
-    }
-  }
-  
-  int min_value = distance_matrix[0][0]; // Assuming the first element is the min value
-  int min_row = 0;      // Initialize the index of the minimum value
-  int min_column = 0;
+  Position aimedPosition; // Will be input to the next_move_function
+  int distance_matrix[GRID_SIZE][GRID_SIZE];
 
   for (int i = 0; i < GRID_SIZE; i++) {
-    for (int j = 0; j < GRID_SIZE; j++) {
+      for (int j = 0; j < GRID_SIZE; j++) {
 
-      if(distance_matrix[i][j]<min_value){
-        
-        min_value = distance_matrix[i][j];
-        min_row = i;
-        min_column = j;
-
-      }      
+        // Calculating the distances (Note that the value we multiply may change if it isn't sufficient)
+        distance_matrix[i][j] = abs(currentPosition.x - i - 1) + abs(currentPosition.y - j - 1) + 10*mu_info_matrix[i][j];
+      }
     }
-  }
+    
+    int min_value = distance_matrix[0][0]; // Assuming the first element is the min value
+    int min_row = 0;      // Initialize the index of the minimum value
+    int min_column = 0;
 
-  aimedPosition.x = min_row + 1; // Since our positions start from 1 but indexes start from 0 we add a 1.
-  aimedPosition.y = min_column + 1;
-  Position nextMoveResult = nextMove(buPosition, currentPosition, aimedPosition, obstacles, obstacleCount);
-  
-  return nextMoveResult;
+    for (int i = 0; i < GRID_SIZE; i++) {
+      for (int j = 0; j < GRID_SIZE; j++) {
+
+        if(distance_matrix[i][j]<min_value){
+          
+          min_value = distance_matrix[i][j];
+          min_row = i;
+          min_column = j;
+
+        }      
+      }
+    }
+
+    aimedPosition.x = min_row + 1; // Since our positions start from 1 but indexes start from 0 we add a 1.
+    aimedPosition.y = min_column + 1;
+    Position nextMoveResult = nextMove(buPosition, currentPosition, aimedPosition, obstacles, obstacleCount);
+    
+    return nextMoveResult;
 }
 
 //******************************************************************
@@ -186,130 +186,193 @@ Position move_to_BU(Position buPosition, Position currentPosition, Position obst
 
 Position move_to_target_MU1(Position buPosition, Position currentPosition, Position targetPosition, Position obstacles[], int obstacleCount, int& state){
 
-Position aimedPosition = targetPosition;
+  Position aimedPosition = targetPosition;
 
-// If the target is in any of the corners, the position might be most probably blocked 
-// by other MUs so instead of moving direclt on to the target, just go the the diagonal position.
-if(aimedPosition.x == 1 && aimedPosition.y == 1){
-  aimedPosition.x = 2;
-  aimedPosition.y = 2;
-}
-if(aimedPosition.x == 1 && aimedPosition.y == 9){
-  aimedPosition.x = 2;
-  aimedPosition.y = 8;
-}
-
-if(aimedPosition.x == 9 && aimedPosition.y == 1){
-  aimedPosition.x = 8;
-  aimedPosition.y = 2;
-}
-
-if(aimedPosition.x == 9 && aimedPosition.y == 9){
-  aimedPosition.x = 8;
-  aimedPosition.y = 8;
-}
-
-Position nextMoveResult = nextMove(buPosition, currentPosition, aimedPosition, obstacles, obstacleCount);
-
-if((currentPosition.x + nextMoveResult.x == targetPosition.x) && (currentPosition.y + nextMoveResult.y == targetPosition.y)){
-  state = TARGET_REACHED;
-}
-
-return nextMoveResult;
-
-}
-
-Position move_decider_MU1(Position buPosition, Position currentPosition, Position targetPosition, Position obstacles[], int obstacleCount,int mu_info_matrix[GRID_SIZE][GRID_SIZE],int& state, int bu_link){
-
-if(state == MOVING_TO_SEARCH_AREA){
-
-  // Adding the BU to the obstacles
-  obstacles[obstacleCount] = buPosition;
-  obstacleCount = obstacleCount + 1;
-
-  Position nextMoveResult = searcher(buPosition, currentPosition, obstacles, obstacleCount,mu_info_matrix);
-
-  if((currentPosition.x + nextMoveResult.x < 4) && (currentPosition.x + nextMoveResult.x > 0)){
-    // If when this move is made, we reach the target, the state update will be done by the RFID output. 
-    // But for now we just know that we are now in our search area.
-    state = CURRENTLY_SEARCHING; 
+  // If the target is in any of the corners, the position might be most probably blocked 
+  // by other MUs so instead of moving direclt on to the target, just go the the diagonal position.
+  if(aimedPosition.x == 1 && aimedPosition.y == 1){
+    aimedPosition.x = 2;
+    aimedPosition.y = 2;
+  }
+  if(aimedPosition.x == 1 && aimedPosition.y == 9){
+    aimedPosition.x = 2;
+    aimedPosition.y = 8;
   }
 
-}
+  if(aimedPosition.x == 9 && aimedPosition.y == 1){
+    aimedPosition.x = 8;
+    aimedPosition.y = 2;
+  }
 
-// Somewhere I should check (either in the main or at the end of here) if while I am in the state of searching, whether
-// my info matrix has ay zeros left or not. If I have no zeros left, then my state should change to TARGET_NOT_FOUND
-else if(state == CURRENTLY_SEARCHING){
+  if(aimedPosition.x == 9 && aimedPosition.y == 9){
+    aimedPosition.x = 8;
+    aimedPosition.y = 8;
+  }
 
-  // Adding the BU to the obstacles
-  obstacles[obstacleCount] = buPosition;
-  obstacles[obstacleCount + 1].x = 4;
-  // We add the tile in the other MUs regions that we might move towards into our obstacles to prevent trespassing.
-  obstacles[obstacleCount + 1].y = currentPosition.y;
-  obstacleCount = obstacleCount + 2;
+  Position nextMoveResult = nextMove(buPosition, currentPosition, aimedPosition, obstacles, obstacleCount);
 
-  Position nextMoveResult = searcher(buPosition, currentPosition, obstacles, obstacleCount, mu_info_matrix);
+  return nextMoveResult;
 
-}
+  }
 
-// If target is NOT found move to the BU
-else if(state == TARGET_NOT_FOUND){
+  Position move_decider_MU1(Position buPosition, Position currentPosition, Position targetPosition, Position obstacles[], int obstacleCount,int mu_info_matrix[GRID_SIZE][GRID_SIZE],int& state, int bu_link){
 
-  // If we have a connection with the BU stay in place
-  if(bu_link == 1){
-  
   Position nextMoveResult;
-  nextMoveResult.x = 0;
-  nextMoveResult.y = 0;
+
+
+  if(state == MOVING_TO_SEARCH_AREA){
+
+    // Adding the BU to the obstacles
+    obstacles[obstacleCount] = buPosition;
+    obstacleCount = obstacleCount + 1;
+
+    nextMoveResult = searcher(buPosition, currentPosition, obstacles, obstacleCount,mu_info_matrix);
+
+  }
+
+  // Somewhere I should check (either in the main or at the end of here) if while I am in the state of searching, whether
+  // my info matrix has ay zeros left or not. If I have no zeros left, then my state should change to TARGET_NOT_FOUND
+  else if(state == CURRENTLY_SEARCHING){
+
     
-  }
-  // Move to the BU
-  else{
-    Position nextMoveResult = move_to_BU(buPosition, currentPosition, obstacles, obstacleCount);
-  }
-}
+    // Adding the BU to the obstacles
+    obstacles[obstacleCount] = buPosition;
+    obstacles[obstacleCount + 1].x = 4;
+    // We add the tile in the other MUs regions that we might move towards into our obstacles to prevent trespassing.
+    obstacles[obstacleCount + 1].y = currentPosition.y;
+    obstacleCount = obstacleCount + 2;
 
-else if(state == TARGET_FOUND){
-  
-  // The job of the finding MU is to move to the BU to inform it. Again having a connection is enough.
-  // If we have a connection with move to the target
-  if(bu_link == 1){
-  
-  state = MOVING_TO_TARGET;
+    nextMoveResult = searcher(buPosition, currentPosition, obstacles, obstacleCount, mu_info_matrix);
 
-  // Adding the BU to the obstacles
-  obstacles[obstacleCount] = buPosition;
-  obstacleCount = obstacleCount + 1;
-
-  Position nextMoveResult = move_to_target_MU1(buPosition, currentPosition, targetPosition, obstacles, obstacleCount, state);
-  }
-  // Move to the BU
-  else{
-    Position nextMoveResult = move_to_BU(buPosition, currentPosition, obstacles, obstacleCount);
   }
 
+  // If target is NOT found move to the BU
+  else if(state == TARGET_NOT_FOUND){
+
+    // If we have a connection with the BU stay in place
+    if(bu_link == 1){
+    
+    nextMoveResult;
+    nextMoveResult.x = 0;
+    nextMoveResult.y = 0;
+      
+    }
+    // Move to the BU
+    else{
+      nextMoveResult = move_to_BU(buPosition, currentPosition, obstacles, obstacleCount);
+    }
+  }
+
+  else if(state == TARGET_FOUND){
+    
+    // The job of the finding MU is to move to the BU to inform it. Again having a connection is enough.
+    // If we have a connection with move to the target
+    if(bu_link == 1){
+    
+    state = MOVING_TO_TARGET;
+
+    // Adding the BU to the obstacles
+    obstacles[obstacleCount] = buPosition;
+    obstacleCount = obstacleCount + 1;
+
+    nextMoveResult = move_to_target_MU1(buPosition, currentPosition, targetPosition, obstacles, obstacleCount, state);
+    }
+    // Move to the BU
+    else{
+      nextMoveResult = move_to_BU(buPosition, currentPosition, obstacles, obstacleCount);
+    }
+
+  }
+
+  else if(state == MOVING_TO_TARGET){
+    // Adding the BU to the obstacles
+    obstacles[obstacleCount] = buPosition;
+    obstacleCount = obstacleCount + 1;
+
+    nextMoveResult = move_to_target_MU1(buPosition, currentPosition, targetPosition, obstacles, obstacleCount, state);
+  }
+
+  // This may be redundant.
+  else if(state == TARGET_REACHED){
+
+    nextMoveResult;
+    nextMoveResult.x = 0;
+    nextMoveResult.y = 0;
+
+  }
+
+  return nextMoveResult;
+  // State should be adjusted after RFID reading. It either stay the same or we switch to TARGET_FOUND
+
 }
 
-else if(state == MOVING_TO_TARGET){
-  // Adding the BU to the obstacles
-  obstacles[obstacleCount] = buPosition;
-  obstacleCount = obstacleCount + 1;
-
-  Position nextMoveResult = move_to_target_MU1(buPosition, currentPosition, targetPosition, obstacles, obstacleCount, state);
+// Function to check if all elements in the matrix are non-zero
+bool unscannedTileLeft(const int matrix[GRID_SIZE][GRID_SIZE]) {
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            if (matrix[i][j] == 0) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
-// This may be redundant.
-else if(state == TARGET_REACHED){
+void clearSerialBuffer() {
+  while (Serial.available() > 0) {
+    Serial.read();
+  }
+}
 
-  Position nextMoveResult;
-  nextMoveResult.x = 0;
-  nextMoveResult.y = 0;
+Position RFID_position_result(){
+
+  Position position_result;
+  // If we had failure to read then return -1,-1 to incdicate mistake
+  position_result.x = -1;
+  position_result.y = -1; 
+
+  byte block = 14;
+  byte buffer[18];
+  byte size = sizeof(buffer);
+  MFRC522::MIFARE_Key key;
+
+  for (byte i = 0; i < 6; i++) key.keyByte[i] = 0xFF;
+
+  if (rfid.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, block, &key, &rfid.uid) != MFRC522::STATUS_OK) {
+    // Serial.println("Authentication failed");
+    return position_result;
+  }
+
+  if (rfid.MIFARE_Read(block, buffer, &size) != MFRC522::STATUS_OK) {
+    // Serial.println("Read failed");
+    return position_result;
+  } else {
+    position_result.x = buffer[0];
+    position_result.y = buffer[1];
+    
+    return position_result;  // Return 0 if coordinates don't match any predefined pairs
+  }
 
 }
 
-return nextMoveResult;
-// State should be adjusted after RFID reading. It either stay the same or we switch to TARGET_FOUND
+int bu_link_checker(Position currentPosition, Position buPosition){
+// Checking first the BU connecition
+      
+      int buLink_check;
 
+      int distance = ((buPosition.x-currentPosition.x)*(buPosition.x-currentPosition.x) + (buPosition.y-currentPosition.y)*(buPosition.y-currentPosition.y));
+
+      // Serial.println("dsiatcne is: " + String(distance));
+
+      if(((buPosition.x-currentPosition.x)*(buPosition.x-currentPosition.x) + (buPosition.y-currentPosition.y)*(buPosition.y-currentPosition.y))<10){
+        buLink_check = 1;
+
+        // Serial.println("BU L");
+      }
+      else{
+        buLink_check = 0;
+        // Serial.println("No BU L");
+      }  
+
+      return buLink_check;
 }
-
-

@@ -9,98 +9,257 @@
 //  mu is planning to go here == 7
 //  obtacle here == 8
 
-
 #include "DecisionUnArd_header.h";
 
-Position targetPosition = {-1, -1};
+// RFID Includes
+#include <SPI.h>
+#include <MFRC522.h>
+//RFID defines
+#define RST_PIN 3
+#define SS_PIN 10
+#define TALK_PIN 2
+MFRC522 rfid(SS_PIN, RST_PIN);
 
-// Should think about where to update these. Maybe just update the 5th and 
-int mu_info_matrix[GRID_SIZE][GRID_SIZE];
+int LED_PIN = 5;
 
-void setup() {
-  
-  // Variables: (might declare these globally)
-  // state
-  // mu_info_matrix
-  // obstacles
-  // obstacleCount
-  // currentPosition
-  // buPosition
-  // targetPosition --> Position targetPosition = {-1, -1};
-  // collision_risk (depending on the o/p, we will communicate with our surroundings.)
-  // move_allowed (depending on collision_risk this will either be direclty 1, or will be calculated in the collision_avoidance function.)
 
-  // I should initialize the obstacles at each turn. Check if it gets updated in the functions.
-  Position obstacles[MAX_OBSTACLES] = {{4, 5}, {7, 4}, {3, 6}};
-  int obstacleCount = 3;
-  
-  // I will assume my info on these to be zero before each move
-  bool isTarget;
-  bool movement_allowed; // collision_avoidance o/p
-  int MU2_state = 0;
-  int MU3_state = 0;
-  
-  // I initialized these as 20 so that the differences in the collision_avoidance is large 
-  Position MU2_position = {20, 20};
-  Position MU3_position = {20, 20};
-  Position nextMove; // This is not actually a position but just the next move.
+// Define positions
+Position buPosition = {5, 5};
+Position currentPosition = {-1, -1};
+Position previousPosition = {-1, -1};
+// Position unknownTargetPosition = {1, 9};
+Position targetPosition = {-1,-1};
 
-  if (state != TARGET_REACHED){
+// Define obstacles
+Position obstacles[MAX_OBSTACLES];
+int obstacleCount = 2;
 
-  // Pass the adress of the currenPosition, it gets updated in the function, no need to have it as o/p
-  isTarget = RFID_reader(&currentPosition);
-  
-  // Info matrix and target_info are updated.
-  if(isTarget){
-    targetPosition = currentPosition;
-    mu_info_matrix[currentPosition.x - 1][currentPosition.y-1] = 6;
+int buLink = 0; 
+// Define mu_info_matrix
+int mu_info_matrix[GRID_SIZE][GRID_SIZE] = {
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {8, 0, 0, 0, 8, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {7, 7, 7, 7, 7, 7, 7, 7, 7},
+    {7, 7, 7, 7, 4, 7, 7, 7, 7},
+    {7, 7, 7, 7, 7, 7, 7, 7, 7},
+    {7, 7, 7, 7, 7, 7, 7, 7, 7},
+    {7, 7, 7, 7, 7, 7, 7, 7, 7},
+    {7, 7, 7, 7, 7, 7, 7, 7, 7}
+};
 
-    // If during these states we have encountered the target, we change our state to TARGET_FOUND.
-    if(state == CURRENTLY_SEARCHING || state == TARGET_NOT_FOUND || state == MOVING_TO_SEARCH_AREA){
-      state == TARGET_FOUND;
+// Set state to MOVING_TO_SEARCH_AREA
+int state = MOVING_TO_SEARCH_AREA;
+
+uint8_t move_decider_wo_comm() {
+
+  uint8_t mu_move = 0;
+
+  buLink = bu_link_checker(currentPosition, buPosition);
+
+  // Serial.println("State when entering the move decider: ");
+  // Serial.println(state);
+
+  if(state ==  TARGET_FOUND && buLink && (currentPosition.x == targetPosition.x && currentPosition.y == targetPosition.y) ){
+    state = TARGET_REACHED;
+    mu_move = 5;
+    // Serial.println("Girdi buraya");
+    return mu_move;
+  }
+
+  if(state ==  TARGET_FOUND && buLink){
+    state = MOVING_TO_TARGET;
+  }
+
+
+  // Updating the info matrix
+  if(currentPosition.x == targetPosition.x && currentPosition.y == targetPosition.y){mu_info_matrix[currentPosition.x-1][currentPosition.y-1] = 6;}
+  else{mu_info_matrix[currentPosition.x-1][currentPosition.y-1] = 5;}
+
+  // If our state is searching and we have no more unscanned tiles left
+  if(state == CURRENTLY_SEARCHING && !unscannedTileLeft(mu_info_matrix)){
+    state = TARGET_NOT_FOUND;
+  }
+
+  if(state == MOVING_TO_TARGET && (currentPosition.x == targetPosition.x) && (currentPosition.y == targetPosition.y)){
+    state = TARGET_REACHED;
+    mu_move = 5;
+    return mu_move;
+  }
+
+  if(state == MOVING_TO_SEARCH_AREA){
+    if((currentPosition.x < 4) && (currentPosition.y > 0)){
+      state = CURRENTLY_SEARCHING; 
     }
   }
-  else{
-    mu_info_matrix[currentPosition.x - 1][currentPosition.y-1] = 5;
-  }
 
-  
-  // Share info on the target and your own position and state info.
-  if(state == TARGET_FOUND || state == MOVING_TO_TARGET){
-    // No return info is needed for the target_info except when informing the BU
-    transmit_target_info(state, CurrentPosition, targetPosition);
-  }
-  else{
-    transmit_general_info(state, CurrentPosition);
-  }
-  
-  // Before making any move, communicate with the surroundings to see if there's any new info, 
-  // and get the position & state info of the MUs in you perimiter
-  [bu_link, bu_target_info, MU2_state, MU3_state, MU2_position, MU3_position] = listen_to_units();  
+  // Call move_decider_MU1
+  Position nextMoveResult = move_decider_MU1(buPosition, currentPosition, targetPosition, obstacles, obstacleCount, mu_info_matrix, state, buLink);
 
-  // checking collision_avoidance to see if movement is allowed.
-  movement_allowed = collision_avoidance(target_position, state, currentPosition, MU2_state, MU3_state, MU2_position, MU3_position, &obstacles, &obstacleCount);
+  // Serial.println("Next Position will be: ");
+  // Serial.println(currentPosition.x+nextMoveResult.x);
+  // Serial.println(currentPosition.y+nextMoveResult.y);
 
-  // If you are allowed to move
-  if(movement_allowed){
-    nextMove = move_decider_MU1(buPosition, currentPosition, targetPosition, obstacles, obstacleCount, mu_info_matrix);
-  }
-  // If you are not allowed to move just STAY
-  else{
-    nextMove.x = 0;
-    nextMove.y = 0;
-  }
+  // 0 == STOP
+  // 1 == FORWARDS
+  // 2 == TURN RIGHT
+  // 3 == TURN LEFT
+  // 4 == TURN AROUND
+  // 5 == TERMINATE SEARCH
 
+  // If we are just starting the search
+  if(previousPosition.x == -1){
+ 
+    if(nextMoveResult.x == 1 && nextMoveResult.y == 0){mu_move = 1;}
+    else if(nextMoveResult.x == -1 && nextMoveResult.y == 0){mu_move = 4;}
+    else if(nextMoveResult.x == 0 && nextMoveResult.y == 1){mu_move = 3;}
+    else if(nextMoveResult.x == 0 && nextMoveResult.y == -1){mu_move = 2;}
+    else{mu_move = 0;}
 
-  send_command_to_motion_unit(nextMove);
   }
   else{
-    nextMove.x = 0;
-    nextMove.y = 0;
+    Position orientation;
+    orientation.x = currentPosition.x - previousPosition.x;
+    orientation.y = currentPosition.y - previousPosition.y;
+
+    //ORIENTATION = RIGHT
+    if(orientation.x == 0 && orientation.y == 1){
+      if(nextMoveResult.x == 1 && nextMoveResult.y == 0){mu_move = 2;}
+      else if(nextMoveResult.x == -1 && nextMoveResult.y == 0){mu_move = 3;}
+      else if(nextMoveResult.x == 0 && nextMoveResult.y == 1){mu_move = 1;}
+      else if(nextMoveResult.x == 0 && nextMoveResult.y == -1){mu_move = 4;}
+      else{mu_move = 0;}
+    }
+    //ORIENTATION = LEFT
+    else if(orientation.x == 0 && orientation.y == -1){
+      if(nextMoveResult.x == 1 && nextMoveResult.y == 0){mu_move = 3;}
+      else if(nextMoveResult.x == -1 && nextMoveResult.y == 0){mu_move = 2;}
+      else if(nextMoveResult.x == 0 && nextMoveResult.y == 1){mu_move = 4;}
+      else if(nextMoveResult.x == 0 && nextMoveResult.y == -1){mu_move = 1;}
+      else{mu_move = 0;}
+    }
+    //ORIENTATION = FORWARD (DEFAULT)
+    else if(orientation.x == 1 && orientation.y == 0){
+      if(nextMoveResult.x == 1 && nextMoveResult.y == 0){mu_move = 1;}
+      else if(nextMoveResult.x == -1 && nextMoveResult.y == 0){mu_move = 4;}
+      else if(nextMoveResult.x == 0 && nextMoveResult.y == 1){mu_move = 3;}
+      else if(nextMoveResult.x == 0 && nextMoveResult.y == -1){mu_move = 2;}
+      else{mu_move = 0;}
+    }
+
+    // AŞAĞI DOPĞRU GİDERKEN SAĞA DÖNCEĞİNE GERİ GİDİYO
+    //ORIENTATION = BACKWARDS
+    else if(orientation.x == -1 && orientation.y == 0){
+      if(nextMoveResult.x == 1 && nextMoveResult.y == 0){mu_move = 4;}
+      else if(nextMoveResult.x == -1 && nextMoveResult.y == 0){mu_move = 1;}
+      else if(nextMoveResult.x == 0 && nextMoveResult.y == 1){mu_move = 2;}
+      else if(nextMoveResult.x == 0 && nextMoveResult.y == -1){mu_move = 3;}
+      else{mu_move = 0;}
+    }
+    else{mu_move = 0;}
+    
+    // Serial.println("First aimed Position x: " + String(currentPosition.x+nextMoveResult.x) + " y: " + String(currentPosition.y+nextMoveResult.y));
+
   }
 
- }
+  // Keeping the previous position
+  previousPosition = currentPosition;
+
+  return mu_move;
+
+}
+
+
+// Setup function
+void setup() {
+
+  //RFID pin setups
+  pinMode(TALK_PIN, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(TALK_PIN, LOW);
+  Serial.begin(9600);
+  SPI.begin();
+  rfid.PCD_Init();
+
+  // Setting the obstacle positions
+  obstacles[0].x = 2;
+  obstacles[0].y = 1;
+  obstacles[1].x = 2;
+  obstacles[1].y = 5;
+  // obstacles[2].x = 3;
+  // obstacles[2].y = 4;
+
+}
 
 void loop() {
-  // Nothing to do here for this example
+
+uint8_t mu_command = 0;
+
+if(state == TARGET_REACHED){
+  mu_command = 5; // search is over
 }
+
+else{
+  // Checking if we are reading a new card  
+  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
+
+    // Assign the coordinates
+    currentPosition = RFID_position_result();
+
+    // Serial.println("LED should turn on");
+
+    digitalWrite(LED_PIN, HIGH);
+    digitalWrite(TALK_PIN, HIGH);
+      
+      
+    // If current position is greater than 9, it means that that position is 
+    // the target. By subtracting 9 we get the currentPosition info as well.
+    if(currentPosition.x>9){
+      if(state < 4){
+        state = TARGET_FOUND;
+      }
+      currentPosition.x = currentPosition.x - 9;
+      currentPosition.y = currentPosition.y - 9;
+      targetPosition.x = currentPosition.x;
+      targetPosition.y = currentPosition.y;
+    }
+
+    // Serial.println("Currrent Position read");
+    // Serial.println(currentPosition.x);
+    // Serial.println(currentPosition.y);
+
+    if(currentPosition.x == -1){
+      // Serial.println("Failed to read the RFID card");
+      mu_command = 0;
+    }
+    else{
+      // RFID intergrated, no comm
+      mu_command = move_decider_wo_comm();
+      // Serial.println("Hey");
+      // Serial.println("COMMAND IS");
+      // Serial.println(mu_command);
+      // Serial.println("state");
+      // Serial.println(state);
+
+      uint8_t coded_coordinates = mu_command*16 + mu_command;
+
+      // Serial.println("LED PIN and TALK PIN high");
+      Serial.write(coded_coordinates);
+      delay(500);
+      digitalWrite(TALK_PIN, LOW);
+      digitalWrite(LED_PIN, LOW);
+    }
+  }
+
+
+  //Serial.println("Place the card to the reader...");
+  rfid.PICC_HaltA(); // Halt PICC
+  rfid.PCD_StopCrypto1(); // Stop encryption on PCD
+
+}
+
+}
+
+
+
+
