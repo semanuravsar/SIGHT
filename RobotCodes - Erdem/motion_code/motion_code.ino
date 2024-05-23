@@ -53,123 +53,73 @@ void setup() {
   pinMode(MOTOR2_B, OUTPUT);
   pinMode(RFID_READ, INPUT);
   pinMode(buzzerPin, OUTPUT);
-
 }
 
 void loop() {
-  // move_forward_until_line_crossing(5000);
-  // delay(2500);
-  move_forward_until_RFID_read_serial();
+  if (movement_terminated == 1) {
+    set_motor_speeds(0, 0);
+    while (true) {  // MU is halted!!
+      digitalWrite(buzzerPin, HIGH);
+      delay(50);
+      digitalWrite(buzzerPin, LOW);
+      delay(950);
+    }
+  }
+
+  move_forward_until_line_crossing(5000);
+  delay(500);
+  uint8_t decision_unit_command = move_forward_until_RFID_read_serial();
   delay(1000);
 
-  //   //step forward until RFID is read
 
-  //   while (true) {
-  //     uint8_t pin_val = digitalRead(RFID_READ);
-  //     if(pin_val == 1)break;
-  //     open_loop_go_forward(0.1);
-  //     delay(2500);
-  //   }
-  //   set_motor_speeds(0.0, 0.0);
-  //   delay(750);
-
-  //   //set_motor_speeds(-0.1, 0.1);
-
-
-
-  //   // if (digitalRead(RFID_READ) == 1) {
-  //   //   Serial.println("Read an RFID, stopping.");
-  //   //   set_motor_speeds(0, 0);
-  //   //   delay(700);
-  //   //   // Serial.println("Read an RFID, stopping.");
-  //   // }
-
-  //   unsigned long currentTime = millis();
-  //   if (currentTime - oldData_startTime > 3000) { oldData = 0; }
-  //   //Checking if there is any new data from the RFID reader
-  //   if (Serial.available() > 0) {  // Check if data is available to read
-
-  //     uint8_t receivedNum = Serial.read();
-
-  //     if (receivedNum != oldData) {
-  //       // Print the received character
-  //       // uint8_t decision_unit_command = int(receivedNum);
-  //       // Serial.println(decision_unit_command);
-  //       uint8_t x = int(receivedNum) / 16;
-  //       uint8_t y = int(receivedNum) % 16;
-  //       Serial.print("Received Command: ");
-  //       Serial.println(x);
-  //       // Serial.println(y);
-
-  //       int decision_unit_command = x;
-
-
-  //       if ((decision_unit_command >= 0 || decision_unit_command < 6)) {
-  //         digitalWrite(buzzerPin, HIGH);  // Turn the buzzer on
-  //         delay(500);                     // Wait for 1 second (1000 milliseconds)
-  //         digitalWrite(buzzerPin, LOW);   // Turn the buzzer off
-  //         delay(500);
-  //       }
-
-  //       if (decision_unit_command == 0) {
-  //         set_motor_speeds(0, 0);
-  //       } else if (decision_unit_command == 1) {
-  //         open_loop_go_forward(0.23);
-  //       } else if (decision_unit_command == 2) {
-  //         // open_loop_turn_right(74.0);
-  //         turn_right_closed_loop();
-  //       } else if (decision_unit_command == 3) {
-  //         // open_loop_turn_left(74.0);
-  //         turn_left_closed_loop();
-  //       } else if (decision_unit_command == 4) {
-  //         // open_loop_turn_right(140.0);
-  //         turn_right_closed_loop();
-  //         turn_right_closed_loop();
-  //       } else if (decision_unit_command == 5) {
-
-  //         movement_terminated = 1;
-  //         set_motor_speeds(0, 0);
-  //       }
-  //       // STOP FOR BU COMM AND THEN GO FORWARD
-  //       else if (decision_unit_command == 6) {
-  //         set_motor_speeds(0, 0);
-  //         delay(5000);
-  //         open_loop_go_forward(0.23);
-  //       }
-  //       // STOP FOR BU COMM AND THEN TURN RIGHT
-  //       else if (decision_unit_command == 7) {
-  //         set_motor_speeds(0, 0);
-  //         delay(5000);
-  //         // open_loop_turn_right(74.0);
-  //         turn_right_closed_loop();
-  //       }
-  //       // STOP FOR BU COMM AND THEN TURN LEFT
-  //       else if (decision_unit_command == 8) {
-  //         set_motor_speeds(0, 0);
-  //         delay(5000);
-  //         // open_loop_turn_left(74.0);
-  //         turn_left_closed_loop();
-  //       }
-  //       // STOP FOR BU COMM AND THEN TURN AROUND
-  //       else if (decision_unit_command == 9) {
-  //         set_motor_speeds(0, 0);
-  //         delay(5000);
-  //         // open_loop_turn_right(140.0);
-  //         turn_right_closed_loop();
-  //         turn_right_closed_loop();
-  //       }
-  //     }
-  //   }
-
-  //   if (movement_terminated != 1) {
-
-  //     move_forward_until_line_crossing(5000);
-  //     delay(1000);
-
-  //     open_loop_go_forward(0.15);
-  //     delay(1000);
-  //   }
+  if (decision_unit_command == 0) {
+    set_motor_speeds(0, 0);
+  } else if (decision_unit_command == 1) {
+    open_loop_go_forward(0.23);
+  } else if (decision_unit_command == 2) {
+    // open_loop_turn_right(74.0);
+    turn_right_closed_loop();
+  } else if (decision_unit_command == 3) {
+    // open_loop_turn_left(74.0);
+    turn_left_closed_loop();
+  } else if (decision_unit_command == 4) {
+    // open_loop_turn_right(140.0);
+    turn_right_closed_loop();
+    turn_right_closed_loop();
+  } else if (decision_unit_command == 5) {
+    movement_terminated = 1;
+    set_motor_speeds(0, 0);
+  }
+  // STOP FOR BU COMM AND THEN GO FORWARD
+  else if (decision_unit_command == 6) {
+    set_motor_speeds(0, 0);
+    delay(5000);
+    open_loop_go_forward(0.23);
+  }
+  // STOP FOR BU COMM AND THEN TURN RIGHT
+  else if (decision_unit_command == 7) {
+    set_motor_speeds(0, 0);
+    delay(5000);
+    // open_loop_turn_right(74.0);
+    turn_right_closed_loop();
+  }
+  // STOP FOR BU COMM AND THEN TURN LEFT
+  else if (decision_unit_command == 8) {
+    set_motor_speeds(0, 0);
+    delay(5000);
+    // open_loop_turn_left(74.0);
+    turn_left_closed_loop();
+  }
+  // STOP FOR BU COMM AND THEN TURN AROUND
+  else if (decision_unit_command == 9) {
+    set_motor_speeds(0, 0);
+    delay(5000);
+    // open_loop_turn_right(140.0);
+    turn_right_closed_loop();
+    turn_right_closed_loop();
+  }
 }
+
 
 uint8_t is_black[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };  // if i'th sensor is black, set to 1. otherwise 0
 
@@ -354,30 +304,33 @@ void move_forward_until_RFID_read() {
   delay(100);
 }
 
-void move_forward_until_RFID_read_serial() {
-  while(Serial.available())Serial.read(); // empty the buffer
+uint8_t move_forward_until_RFID_read_serial() {
+  while (Serial.available()) Serial.read();  // empty the buffer
 
   while (true) {
-    if(Serial.available()>0){
-        char c = Serial.read();
-        if(c  == 's'){
-          Serial.println("s is received");
-          break;
-        }
+    if (Serial.available() > 0) {
+      char c = Serial.read();
+      if (c == 's') {
+        Serial.println("s is received");
+        break;
+      }
     }
     set_motor_speeds(0.19, 0.19);
   }
 
-  while(!Serial.available()>0); // wait to receive command
+  set_motor_speeds(0, 0);  // stop motor
+  while (!Serial.available() > 0)
+    ;  // wait to receive command
   uint8_t command = Serial.read();
-  Serial.println(command);
+  Serial.println("Command: "+String(command));
 
-  set_motor_speeds(0, 0);
 
   digitalWrite(buzzerPin, HIGH);  // Turn the buzzer on
   delay(100);                     // Wait for 1 second (1000 milliseconds)
   digitalWrite(buzzerPin, LOW);   // Turn the buzzer off
   delay(100);
+
+  return command;
 }
 
 void rotate_cw() {
