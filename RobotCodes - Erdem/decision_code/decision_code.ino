@@ -228,7 +228,7 @@ else{
 
     digitalWrite(LED_PIN, HIGH);
     digitalWrite(TALK_PIN, HIGH);
-      
+    Serial.write('s');
       
     // If current position is greater than 9, it means that that position is 
     // the target. By subtracting 9 we get the currentPosition info as well.
@@ -253,12 +253,6 @@ else{
     else{
       // RFID intergrated, no comm
       mu_command = move_decider_wo_comm();
-      // Serial.println("Hey");
-      // Serial.println("COMMAND IS");
-      // Serial.println(mu_command);
-      // Serial.println("state");
-      // Serial.println(state);
-
       if(ALERT_BU){
        mu_command = mu_command + 5;
       }
