@@ -219,7 +219,6 @@ uint8_t mu_command = 0;
 if(state == TARGET_REACHED){
   mu_command = 5; // search is over
 }
-
 else{
   // Checking if we are reading a new card  
   if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
@@ -231,7 +230,7 @@ else{
 
     digitalWrite(LED_PIN, HIGH);
     digitalWrite(TALK_PIN, HIGH);
-      
+    Serial.print('s');
       
     // If current position is greater than 9, it means that that position is 
     // the target. By subtracting 9 we get the currentPosition info as well.
