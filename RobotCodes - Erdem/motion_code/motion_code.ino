@@ -57,13 +57,10 @@ void setup() {
 }
 
 void loop() {
-  Serial.println(digitalRead(RFID_READ));
-  move_forward_until_line_crossing(5000);
-  delay(2500);
+  // move_forward_until_line_crossing(5000);
+  // delay(2500);
   move_forward_until_RFID_read_serial();
   delay(1000);
-
-
 
   //   //step forward until RFID is read
 
@@ -371,7 +368,8 @@ void move_forward_until_RFID_read_serial() {
     set_motor_speeds(0.19, 0.19);
   }
 
-  byte command = Serial.read();
+  while(!Serial.available()>0); // wait to receive command
+  uint8_t command = Serial.read();
   Serial.println(command);
 
   set_motor_speeds(0, 0);

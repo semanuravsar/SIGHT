@@ -260,7 +260,7 @@ else{
       uint8_t coded_coordinates = mu_command*16 + mu_command;
 
       // Serial.println("LED PIN and TALK PIN high");
-      Serial.write(coded_coordinates);
+      Serial.write(5);
       delay(500);
       digitalWrite(TALK_PIN, LOW);
       digitalWrite(LED_PIN, LOW);
