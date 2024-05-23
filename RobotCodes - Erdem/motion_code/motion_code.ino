@@ -68,14 +68,15 @@ void loop() {
 
   move_forward_until_line_crossing(5000);
   delay(500);
-  uint8_t decision_unit_command = move_forward_until_RFID_read_serial();
+  int decision_unit_command = move_forward_until_RFID_read_serial();
   delay(1000);
 
-
+humeyra_yuzunden_bu_goto:
   if (decision_unit_command == 0) {
     set_motor_speeds(0, 0);
   } else if (decision_unit_command == 1) {
-    open_loop_go_forward(0.23);
+    // open_loop_go_forward(0.23);
+    // GOES FORWARD
   } else if (decision_unit_command == 2) {
     // open_loop_turn_right(74.0);
     turn_right_closed_loop();
@@ -94,7 +95,7 @@ void loop() {
   else if (decision_unit_command == 6) {
     set_motor_speeds(0, 0);
     delay(5000);
-    open_loop_go_forward(0.23);
+    // open_loop_go_forward(0.23);
   }
   // STOP FOR BU COMM AND THEN TURN RIGHT
   else if (decision_unit_command == 7) {
@@ -117,9 +118,15 @@ void loop() {
     // open_loop_turn_right(140.0);
     turn_right_closed_loop();
     turn_right_closed_loop();
+  } else if (decision_unit_command == 10) {
+    set_motor_speeds(0, 0);
+    while (true) {
+      if (Serial.available() > 0) break;
+    }
+    decision_unit_command = Serial.read();
+    goto humeyra_yuzunden_bu_goto;
   }
 }
-
 
 uint8_t is_black[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };  // if i'th sensor is black, set to 1. otherwise 0
 
@@ -304,25 +311,28 @@ void move_forward_until_RFID_read() {
   delay(100);
 }
 
-uint8_t move_forward_until_RFID_read_serial() {
+int move_forward_until_RFID_read_serial() {
+
   while (Serial.available()) Serial.read();  // empty the buffer
 
   while (true) {
+    set_motor_speeds(0.19, 0.19);
     if (Serial.available() > 0) {
       char c = Serial.read();
       if (c == 's') {
         Serial.println("s is received");
+        set_motor_speeds(0, 0);  // stop motor
         break;
       }
     }
-    set_motor_speeds(0.19, 0.19);
   }
 
-  set_motor_speeds(0, 0);  // stop motor
-  while (!Serial.available() > 0)
-    ;  // wait to receive command
-  uint8_t command = Serial.read();
-  Serial.println("Command: "+String(command));
+  while (true) {
+    if (Serial.available() > 0) break;
+  }
+  // wait to receive command
+  int command = Serial.read();
+  Serial.println("Command: " + String(command));
 
 
   digitalWrite(buzzerPin, HIGH);  // Turn the buzzer on
