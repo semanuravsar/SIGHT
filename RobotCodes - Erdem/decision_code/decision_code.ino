@@ -228,7 +228,7 @@ else{
 
     digitalWrite(LED_PIN, HIGH);
     digitalWrite(TALK_PIN, HIGH);
-    Serial.write('s');
+    Serial.print('s');
       
     // If current position is greater than 9, it means that that position is 
     // the target. By subtracting 9 we get the currentPosition info as well.

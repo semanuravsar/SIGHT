@@ -57,11 +57,13 @@ void setup() {
 }
 
 void loop() {
-  //Serial.println(digitalRead(RFID_READ));
+  Serial.println(digitalRead(RFID_READ));
   move_forward_until_line_crossing(5000);
   delay(2500);
-  move_forward_until_RFID_read();
+  move_forward_until_RFID_read_serial();
   delay(1000);
+
+
 
   //   //step forward until RFID is read
 
@@ -219,7 +221,7 @@ void set_motor_speeds(float M1_speed, float M2_speed) {
 
   uint16_t M1_pwm = uint8_t(255.0 * (M1_speed / max_speed));
   uint16_t M2_pwm = uint8_t(255.0 * (M2_speed / max_speed));
-  Serial.println(String(M1_speed) + " " + String(M1_pwm) + " " + String(M2_speed) + " " + String(M2_pwm));
+  //Serial.println(String(M1_speed) + " " + String(M1_pwm) + " " + String(M2_speed) + " " + String(M2_pwm));
 
   analogWrite(MOTOR1_PWM, M1_pwm);
   analogWrite(MOTOR2_PWM, M2_pwm);
@@ -347,6 +349,31 @@ void move_forward_until_RFID_read() {
     if (pin_val == 1) break;
     set_motor_speeds(0.19, 0.19);
   }
+  set_motor_speeds(0, 0);
+
+  digitalWrite(buzzerPin, HIGH);  // Turn the buzzer on
+  delay(100);                     // Wait for 1 second (1000 milliseconds)
+  digitalWrite(buzzerPin, LOW);   // Turn the buzzer off
+  delay(100);
+}
+
+void move_forward_until_RFID_read_serial() {
+  while(Serial.available())Serial.read(); // empty the buffer
+
+  while (true) {
+    if(Serial.available()>0){
+        char c = Serial.read();
+        if(c  == 's'){
+          Serial.println("s is received");
+          break;
+        }
+    }
+    set_motor_speeds(0.19, 0.19);
+  }
+
+  byte command = Serial.read();
+  Serial.println(command);
+
   set_motor_speeds(0, 0);
 
   digitalWrite(buzzerPin, HIGH);  // Turn the buzzer on
