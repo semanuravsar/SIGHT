@@ -150,7 +150,7 @@ class Picasso():
         px, py = self.map_grid_cord_to_pixel(mu_coordinates[0], mu_coordinates[1])
 
         # draw dashed line
-        icon_center_px = (px, 190)
+        icon_center_px = (px, 240)
         cv2.line(self.frame, icon_center_px, (px, py), (0, 0, 0), 2, cv2.LINE_AA)
 
         # draw the target icon
@@ -252,7 +252,7 @@ if __name__ == "__main__":
         for unit in units:
             if unit.is_target_found():
                 target.set_found_status(True) 
-                       
+
         picasso.draw_target(target)
 
         for unit in units:
