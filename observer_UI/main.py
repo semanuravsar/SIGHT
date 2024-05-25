@@ -39,6 +39,7 @@ class Picasso():
         }
         
         self.last_header_text = ""
+        self.last_header_text_change_time = datetime.datetime.now()
         self.frame = self.get_image("UI_background")
 
     def get_image(self, image_name:str):
@@ -74,31 +75,39 @@ class Picasso():
 
     def set_header_text(self, text:str=None):
         self.last_header_text = text
+        self.last_header_text_change_time = datetime.datetime.now()
        
+    def draw_visited_coordinates_of_unit(self, unit:Unit=None):
+        for coordinate in unit.get_visited_coordinates():
+            px, py = self.map_grid_cord_to_pixel(coordinate[0], coordinate[1])
+            cv2.circle(self.frame, (px, py), 5, (255, 0, 0), -1)
+
     def draw_header(self):
         bottom_left = (350,100)
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = self.last_header_text_change_time.strftime("%Y-%m-%d %H:%M:%S")
         cv2.putText(self.frame, f"{timestamp} - {self.last_header_text}", bottom_left, cv2.FONT_HERSHEY_SIMPLEX, 0.85, (0, 0, 0), 2, cv2.LINE_AA)
 
     def draw_unit(self, mu: Unit):
-        icon = mu.get_icon()
-        mu_coordinates = mu.get_coordinates()
-        px, py = self.map_grid_cord_to_pixel(mu_coordinates[0], mu_coordinates[1])
 
-        # Calculate the top-left corner position to center the icon at (px, py)
-        start_x = px - icon.shape[1] // 2
-        start_y = (py - icon.shape[0] // 2) -20
+        if mu.should_draw():
+            icon = mu.get_icon()
+            mu_coordinates = mu.get_coordinates()
+            px, py = self.map_grid_cord_to_pixel(mu_coordinates[0], mu_coordinates[1])
 
-        if icon.shape[2] == 4:  # Ensure the icon has an alpha channel
-            alpha_s = icon[:, :, 3] / 255.0
-            alpha_l = 1.0 - alpha_s
+            # Calculate the top-left corner position to center the icon at (px, py)
+            start_x = px - icon.shape[1] // 2
+            start_y = (py - icon.shape[0] // 2) -20
 
-            for c in range(0, 3):
-                self.frame[start_y:start_y+icon.shape[0], start_x:start_x+icon.shape[1], c] = (
-                    alpha_s * icon[:, :, c] + alpha_l * self.frame[start_y:start_y+icon.shape[0], start_x:start_x+icon.shape[1], c]
-                )
-        else:
-            self.frame[start_y:start_y+icon.shape[0], start_x:start_x+icon.shape[1]] = icon
+            if icon.shape[2] == 4:  # Ensure the icon has an alpha channel
+                alpha_s = icon[:, :, 3] / 255.0
+                alpha_l = 1.0 - alpha_s
+
+                for c in range(0, 3):
+                    self.frame[start_y:start_y+icon.shape[0], start_x:start_x+icon.shape[1], c] = (
+                        alpha_s * icon[:, :, c] + alpha_l * self.frame[start_y:start_y+icon.shape[0], start_x:start_x+icon.shape[1], c]
+                    )
+            else:
+                self.frame[start_y:start_y+icon.shape[0], start_x:start_x+icon.shape[1]] = icon
 
         #draw textual information
         top_left_map = {
@@ -224,7 +233,7 @@ if __name__ == "__main__":
     units = [base_unit_1, mobile_unit_2, mobile_unit_3, mobile_unit_4]
     obstacles = [obstacle_1, obstacle_2]
 
-    # draw the units
+    # draw the UI
     while True:
         #TODO: check for the serial data: if the serial data is received, update the units' positions
 
@@ -247,17 +256,26 @@ if __name__ == "__main__":
         # draw header
         picasso.draw_header()
 
+        # draw the visited coordinates of the units
+        for unit in units:
+            picasso.draw_visited_coordinates_of_unit(unit)
+
         # draw the target
         target.set_found_status(False)   
         for unit in units:
             if unit.is_target_found():
                 target.set_found_status(True) 
 
+    
+
         picasso.draw_target(target)
 
         for unit in units:
-            if unit.should_draw():
-                picasso.draw_unit(unit)       
+                try:
+                    picasso.draw_unit(unit)       
+                except:
+                    print("Error while drawing the unit: ID ", unit.get_id())
+                    continue
 
         picasso.draw_obstacle(obstacle_1)
         picasso.draw_obstacle(obstacle_2)

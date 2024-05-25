@@ -14,6 +14,8 @@ class Unit():
         self.y_target = None # y coordinate of the target of the mobile unit
         self.state = "NA" # state of the mobile unit
 
+        self.visited_coordinates = [] # list of coordinates that the mobile unit has visited
+
         self.number_of_packages = 0 # number of packages that the mobile unit has sent and received
         self.last_time_package_received = None # time when the last package wasa sent by the mobile unit and received
     
@@ -34,6 +36,9 @@ class Unit():
             return False
         return True
     
+    def get_visited_coordinates(self):
+        return self.visited_coordinates
+    
     def get_icon(self):
         return self.ICON_IMAGE
     
@@ -52,6 +57,10 @@ class Unit():
         
         self.x = info_dict['x']
         self.y = info_dict['y']
+
+        visited_coord = (self.x, self.y)
+        if visited_coord not in self.visited_coordinates:
+            self.visited_coordinates.append(visited_coord)
         
         self.x_target = info_dict['target_x']
         self.y_target = info_dict['target_y']
