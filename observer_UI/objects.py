@@ -3,10 +3,11 @@ import time
 
 class Unit():
 
-    def __init__(self, id:int=0, icon_image:np.ndarray=None, x:int=1, y:int=1):
+    def __init__(self, id:int=0, icon_image:np.ndarray=None, x:int=1, y:int=1, characteristic_color = (255,0,0)):
 
         self.ICON_IMAGE = icon_image
         self.ID = id # ID of the mobile unit
+        self.CHARACTERISTIC_COLOR = characteristic_color # color of the mobile unit
 
         self.x = x # x coordinate of the mobile unit
         self.y = y # y coordinate of the mobile unit
@@ -28,6 +29,9 @@ class Unit():
             return False
         
         return True
+    
+    def get_characteristic_color(self):
+        return self.CHARACTERISTIC_COLOR
     
     def should_draw(self):
         if self.x is None or self.y is None:

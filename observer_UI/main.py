@@ -78,9 +78,10 @@ class Picasso():
         self.last_header_text_change_time = datetime.datetime.now()
        
     def draw_visited_coordinates_of_unit(self, unit:Unit=None):
+        color = unit.get_characteristic_color()
         for coordinate in unit.get_visited_coordinates():
             px, py = self.map_grid_cord_to_pixel(coordinate[0], coordinate[1])
-            cv2.circle(self.frame, (px, py), 5, (255, 0, 0), -1)
+            cv2.circle(self.frame, (px, py), 10, color, -1)
 
     def draw_header(self):
         bottom_left = (350,100)
@@ -222,9 +223,9 @@ if __name__ == "__main__":
 
     # define the units
     base_unit_1 = Unit(id = 4, x=5, y=5, icon_image = picasso.get_image("base_unit"))
-    mobile_unit_2 = Unit(id = 2,x=None, y=None, icon_image = picasso.get_image("mu_dark_blue"))
-    mobile_unit_3 = Unit(id = 3,x=None, y=None, icon_image = picasso.get_image("mu_light_blue"))
-    mobile_unit_4 = Unit(id = 1,x=None, y=None, icon_image = picasso.get_image("mu_purple"))
+    mobile_unit_2 = Unit(id = 2,x=None, y=None, icon_image = picasso.get_image("mu_dark_blue"), characteristic_color=(165,110,55))
+    mobile_unit_3 = Unit(id = 3,x=None, y=None, icon_image = picasso.get_image("mu_light_blue"), characteristic_color=(245,210,130))
+    mobile_unit_4 = Unit(id = 1,x=None, y=None, icon_image = picasso.get_image("mu_purple"), characteristic_color=(125,90,110))
 
     # define the obstacles
     obstacle_1 = Obstacle(x = 3, y = 2, icon_image = picasso.get_image("obstacle"))
