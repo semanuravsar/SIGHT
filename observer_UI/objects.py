@@ -17,6 +17,16 @@ class Unit():
         self.number_of_packages = 0 # number of packages that the mobile unit has sent and received
         self.last_time_package_received = None # time when the last package wasa sent by the mobile unit and received
     
+
+    def is_target_found(self):
+        if self.x_target is None or self.y_target is None:
+            return False
+        
+        if self.x_target == 10 and self.y_target == 10:
+            return False
+        
+        return True
+    
     def should_draw(self):
         if self.x is None or self.y is None:
             return False
@@ -29,6 +39,9 @@ class Unit():
     
     def get_coordinates(self):
         return (self.x, self.y)
+    
+    def get_target_coordinates(self):
+        return (self.x_target, self.y_target)
     
     def update_with_info(self, info_dict:dict):
         id = info_dict['received_ID']
@@ -66,6 +79,9 @@ class Unit():
         elapsed_time_h = elapsed_time_m / 60
         return f"{int(elapsed_time_h)} h"
         
+    def get_number_of_packages(self):
+        return self.number_of_packages
+    
     def get_state(self):
         return self.state
     

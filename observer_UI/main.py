@@ -110,9 +110,13 @@ class Picasso():
 
         shifts = {
             "elapsed_time" : (240, 32),
+            "number_of_packages": (240, 70),
             "state": (88, 80),
             "x":(50 , 118),
             "y":(140, 118),
+            "x_p": (50, 158),
+            "y_p": (140, 158),
+
         }
 
         robot_id = mu.get_id()
@@ -120,6 +124,9 @@ class Picasso():
         # draw the elapsed time since the last package
         elapsed_time = mu.return_elapsed_time_since_last_package()
         cv2.putText(self.frame, f"{elapsed_time}", (top_left_map[robot_id][0]+shifts["elapsed_time"][0], top_left_map[robot_id][1] + shifts["elapsed_time"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
+
+        # draw the number of packages
+        cv2.putText(self.frame, f"{mu.get_number_of_packages()}", (top_left_map[robot_id][0]+shifts["number_of_packages"][0], top_left_map[robot_id][1] + shifts["number_of_packages"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
 
         # draw the state of the unit
         cv2.putText(self.frame, f"{mu.get_state()}", (top_left_map[robot_id][0]+shifts["state"][0], top_left_map[robot_id][1] + shifts["state"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
@@ -130,6 +137,12 @@ class Picasso():
         cv2.putText(self.frame, f"{mu.get_coordinates()[0]}", (top_left_map[robot_id][0]+shifts["x"][0], top_left_map[robot_id][1] + shifts["x"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
         # y
         cv2.putText(self.frame, f"{mu.get_coordinates()[1]}", (top_left_map[robot_id][0]+shifts["y"][0], top_left_map[robot_id][1] + shifts["y"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
+
+        # draw the x and y coordinates of the target
+        # x
+        cv2.putText(self.frame, f"{mu.get_target_coordinates()[0]}", (top_left_map[robot_id][0]+shifts["x_p"][0], top_left_map[robot_id][1] + shifts["x_p"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
+        # y
+        cv2.putText(self.frame, f"{mu.get_target_coordinates()[1]}", (top_left_map[robot_id][0]+shifts["y_p"][0], top_left_map[robot_id][1] + shifts["y_p"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
 
     def draw_target(self, target: Target):
         icon = target.get_icon()
@@ -195,7 +208,7 @@ if __name__ == "__main__":
     serial_data_parser = DataParser()
     
     # define the targets
-    target = Target(x = 1, y = 1, found_target_icon = picasso.get_image("found_target"), not_found_target_icon = picasso.get_image("not_found_target"))
+    target = Target(x = 5, y = 8, found_target_icon = picasso.get_image("found_target"), not_found_target_icon = picasso.get_image("not_found_target"))
     target.set_found_status(False)
 
     # define the units
@@ -205,8 +218,8 @@ if __name__ == "__main__":
     mobile_unit_4 = Unit(id = 1,x=None, y=None, icon_image = picasso.get_image("mu_purple"))
 
     # define the obstacles
-    obstacle_1 = Obstacle(x = 2, y = 2, icon_image = picasso.get_image("obstacle"))
-    obstacle_2 = Obstacle(x = 3, y = 3, icon_image = picasso.get_image("obstacle"))
+    obstacle_1 = Obstacle(x = 3, y = 2, icon_image = picasso.get_image("obstacle"))
+    obstacle_2 = Obstacle(x = 2, y = 5, icon_image = picasso.get_image("obstacle"))
 
     units = [base_unit_1, mobile_unit_2, mobile_unit_3, mobile_unit_4]
     obstacles = [obstacle_1, obstacle_2]
@@ -227,12 +240,19 @@ if __name__ == "__main__":
             for unit in units:
                 unit.update_with_info(parsed_data_dict)
 
+
         # draw the units
         picasso.reset_frame()
             
         # draw header
         picasso.draw_header()
-        
+
+        # draw the target
+        target.set_found_status(False)   
+        for unit in units:
+            if unit.is_target_found():
+                target.set_found_status(True) 
+                       
         picasso.draw_target(target)
 
         for unit in units:
