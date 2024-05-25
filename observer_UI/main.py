@@ -129,30 +129,33 @@ class Picasso():
 
         }
 
+
+        text_color = (255,255,255)
+        text_stroke = 2
         robot_id = mu.get_id()
 
         # draw the elapsed time since the last package
         elapsed_time = mu.return_elapsed_time_since_last_package()
-        cv2.putText(self.frame, f"{elapsed_time}", (top_left_map[robot_id][0]+shifts["elapsed_time"][0], top_left_map[robot_id][1] + shifts["elapsed_time"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(self.frame, f"{elapsed_time}", (top_left_map[robot_id][0]+shifts["elapsed_time"][0], top_left_map[robot_id][1] + shifts["elapsed_time"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75,text_color, text_stroke, cv2.LINE_AA)
 
         # draw the number of packages
-        cv2.putText(self.frame, f"{mu.get_number_of_packages()}", (top_left_map[robot_id][0]+shifts["number_of_packages"][0], top_left_map[robot_id][1] + shifts["number_of_packages"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(self.frame, f"{mu.get_number_of_packages()}", (top_left_map[robot_id][0]+shifts["number_of_packages"][0], top_left_map[robot_id][1] + shifts["number_of_packages"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, text_color, text_stroke, cv2.LINE_AA)
 
         # draw the state of the unit
-        cv2.putText(self.frame, f"{mu.get_state()}", (top_left_map[robot_id][0]+shifts["state"][0], top_left_map[robot_id][1] + shifts["state"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(self.frame, f"{mu.get_state()}", (top_left_map[robot_id][0]+shifts["state"][0], top_left_map[robot_id][1] + shifts["state"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, text_color, text_stroke, cv2.LINE_AA)
     
 
         # draw the x and y coordinates of the unit
         # x
-        cv2.putText(self.frame, f"{mu.get_coordinates()[0]}", (top_left_map[robot_id][0]+shifts["x"][0], top_left_map[robot_id][1] + shifts["x"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(self.frame, f"{mu.get_coordinates()[0]}", (top_left_map[robot_id][0]+shifts["x"][0], top_left_map[robot_id][1] + shifts["x"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, text_color, text_stroke, cv2.LINE_AA)
         # y
-        cv2.putText(self.frame, f"{mu.get_coordinates()[1]}", (top_left_map[robot_id][0]+shifts["y"][0], top_left_map[robot_id][1] + shifts["y"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(self.frame, f"{mu.get_coordinates()[1]}", (top_left_map[robot_id][0]+shifts["y"][0], top_left_map[robot_id][1] + shifts["y"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, text_color, text_stroke, cv2.LINE_AA)
 
         # draw the x and y coordinates of the target
         # x
-        cv2.putText(self.frame, f"{mu.get_target_coordinates()[0]}", (top_left_map[robot_id][0]+shifts["x_p"][0], top_left_map[robot_id][1] + shifts["x_p"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(self.frame, f"{mu.get_target_coordinates()[0]}", (top_left_map[robot_id][0]+shifts["x_p"][0], top_left_map[robot_id][1] + shifts["x_p"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, text_color, text_stroke, cv2.LINE_AA)
         # y
-        cv2.putText(self.frame, f"{mu.get_target_coordinates()[1]}", (top_left_map[robot_id][0]+shifts["y_p"][0], top_left_map[robot_id][1] + shifts["y_p"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(self.frame, f"{mu.get_target_coordinates()[1]}", (top_left_map[robot_id][0]+shifts["y_p"][0], top_left_map[robot_id][1] + shifts["y_p"][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, text_color, text_stroke, cv2.LINE_AA)
 
     def draw_target(self, target: Target):
         icon = target.get_icon()
