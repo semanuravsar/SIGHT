@@ -25,7 +25,7 @@ class Unit():
         if self.x_target is None or self.y_target is None:
             return False
         
-        if self.x_target == 10 and self.y_target == 10:
+        if self.x_target >= 10 or self.y_target >= 10:
             return False
         
         return True
