@@ -392,7 +392,7 @@ void listener(Position& MU1_NextPosition, Position& MU2_NextPosition, Position& 
     }
     else if(received_ID == 4){
       
-      buLink = 1;
+      // buLink = 1;
       if(target_x < 10 && target_x > 0){
         targetPosition.x = target_x;
         targetPosition.y = target_y;
