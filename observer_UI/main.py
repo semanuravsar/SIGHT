@@ -247,6 +247,7 @@ if __name__ == "__main__":
             print("RECEIVED ->", r)
             picasso.set_header_text(text=f"RECEIVED ->{r}")
     
+        print(r)
         parsed_data_dict = serial_data_parser.parse_data(received_data= r)
         if parsed_data_dict is not None:
             print("PARSED ->", parsed_data_dict)
