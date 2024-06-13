@@ -221,7 +221,7 @@ if __name__ == "__main__":
     serial_data_parser = DataParser()
     
     # define the targets
-    target = Target(x = 5, y = 8, found_target_icon = picasso.get_image("found_target"), not_found_target_icon = picasso.get_image("not_found_target"))
+    target = Target(x = 2, y = 2, found_target_icon = picasso.get_image("found_target"), not_found_target_icon = picasso.get_image("not_found_target"))
     target.set_found_status(False)
 
     # define the units
@@ -231,11 +231,12 @@ if __name__ == "__main__":
     mobile_unit_4 = Unit(id = 1,x=None, y=None, icon_image = picasso.get_image("mu_purple"), characteristic_color=(125,90,110))
 
     # define the obstacles
-    obstacle_1 = Obstacle(x = 3, y = 2, icon_image = picasso.get_image("obstacle"))
-    obstacle_2 = Obstacle(x = 2, y = 5, icon_image = picasso.get_image("obstacle"))
+    obstacle_1 = Obstacle(x = 3, y = 1, icon_image = picasso.get_image("obstacle"))
+    obstacle_2 = Obstacle(x = 3, y = 3, icon_image = picasso.get_image("obstacle"))
+    obstacle_3 = Obstacle(x = 3, y = 4, icon_image = picasso.get_image("obstacle"))
 
     units = [base_unit_1, mobile_unit_2, mobile_unit_3, mobile_unit_4]
-    obstacles = [obstacle_1, obstacle_2]
+    obstacles = [obstacle_1, obstacle_2,obstacle_3]
 
     # draw the UI
     while True:
@@ -281,8 +282,9 @@ if __name__ == "__main__":
                     print("Error while drawing the unit: ID ", unit.get_id())
                     continue
 
-        picasso.draw_obstacle(obstacle_1)
-        picasso.draw_obstacle(obstacle_2)
+        
+        for obstacle_obj in obstacles:
+            picasso.draw_obstacle(obstacle_obj)
 
         picasso.show_frame()
 
