@@ -373,7 +373,7 @@ int bu_link_checker(Position currentPosition, Position buPosition){
 
       // Serial.println("dsiatcne is: " + String(distance));
 
-      if(((buPosition.x-currentPosition.x)*(buPosition.x-currentPosition.x) + (buPosition.y-currentPosition.y)*(buPosition.y-currentPosition.y))<10){
+      if(((buPosition.x-currentPosition.x)*(buPosition.x-currentPosition.x) + (buPosition.y-currentPosition.y)*(buPosition.y-currentPosition.y))<6){
         buLink_check = 1;
 
         // Serial.println("BU L");

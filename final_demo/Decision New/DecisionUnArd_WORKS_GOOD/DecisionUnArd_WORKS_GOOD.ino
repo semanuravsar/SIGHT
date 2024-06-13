@@ -63,8 +63,8 @@ bool movement_allowed = 1; // NEW
 // Define mu_info_matrix
 int mu_info_matrix[GRID_SIZE][GRID_SIZE] = {
     {0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 8, 0, 0, 0, 0},
-    {8, 8, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {8, 0, 8, 8, 0, 0, 0, 0, 0},
     {7, 7, 7, 7, 7, 7, 7, 7, 7},
     {7, 7, 7, 7, 4, 7, 7, 7, 7},
     {7, 7, 7, 7, 7, 7, 7, 7, 7},
@@ -231,11 +231,11 @@ void setup() {
 
   // Setting the obstacle positions
   obstacles[0].x = 3;
-  obstacles[0].y = 2;
-  obstacles[1].x = 2;
-  obstacles[1].y = 5;
+  obstacles[0].y = 1;
+  obstacles[1].x = 3;
+  obstacles[1].y = 3;
   obstacles[2].x = 3;
-  obstacles[2].y = 1;
+  obstacles[2].y = 4;
 }
 
 void loop() {
