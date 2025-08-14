@@ -14,8 +14,6 @@ This project implements an **autonomous multi-unit robotic system** for searchin
 - Units scan their assigned regions independently.  
 - Upon detecting the target, the discovering MU shares its location, prompting all units to converge.  
 
----
-
 ## **Video Demonstration**  
 Watch the project in action here:  
 - [Project Video](https://www.youtube.com/watch?v=MVDLl5eAIYU)  
@@ -41,13 +39,11 @@ Watch the project in action here:
 - **Search States:** 6 defined (moving to area, searching, target not found, target found, moving to target, target reached). Ack = state + 9.  
 - **Performance:** ≥95% success within ±22.5° at 0.5 m; ≥90% at 1 m; stable for 4-, 8-, and 12-byte packets at 1 m.  
 
----
 
 ### **2. Decision Unit**  
 - Implements the **Predetermined Area Assignment** algorithm.  
 - Maintains latest states/positions of other MUs to prevent collisions.  
 - Assigns movement priorities based on defined search states.  
----
 
 ### **3. Sensing Unit**  
 - **Method:** RFID-based localization.  
@@ -59,7 +55,6 @@ Watch the project in action here:
   - Reads tags in milliseconds while moving at 10 cm/s (no stop needed).  
   - On read, MU pauses 500 ms to process.  
 
----
 
 ### **4. Motion Unit**  
 - **Submodules:** Mechanical, driving, and feedback.  
@@ -72,7 +67,6 @@ Watch the project in action here:
   - Ensures accurate RFID positioning.  
 - **Recovery:** Back-and-forth routine if tag read is missed.  
 
----
 
 ### **5. Power Unit**  
 - **Consumption:** ~4.6 W average (motors ~3.45 W).  
@@ -80,7 +74,6 @@ Watch the project in action here:
 - **Runtime:** >5 hours at worst-case 7.5 W.  
 - **Regulation:** Linear 5 V; remove batteries for charging.  
 
----
 
 ## **System Workflow**  
 1. MUs start at the base and move toward their assigned regions.  
