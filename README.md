@@ -89,3 +89,7 @@ Watch the project in action here:
 4. If a target is detected, the discovering MU broadcasts location, and all MUs converge on it.  
 
 ---
+
+## Authors
+Erdem Canaz, Semanur Avşar, Humeyra Bodur, Özge Deniz Ateş, Berfin Kökmen, Yiğit Sayar
+
