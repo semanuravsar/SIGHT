@@ -19,10 +19,10 @@ Watch the project in action here:
 - [Project Video](https://www.youtube.com/watch?v=MVDLl5eAIYU)  
 
 ## Poster
-- [Project Poster (PDF)](SIGHT/Final%20Demo%20Poster/Sight_poster_30_05_2024_05-17.pdf)
+- [Project Poster (PDF)](Final%20Demo%20Poster/Sight_poster_30_05_2024_05-17.pdf)
 
 ## Final Report
-- [Project Final Report (PDF)](SIGHT/reports/Final-Report.pdf)
+- [Project Final Report (PDF)](reports/Final-Report.pdf)
 
 ---
 
