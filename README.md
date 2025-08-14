@@ -20,7 +20,6 @@ This project implements an **autonomous multi-unit robotic system** for searchin
 Watch the project in action here:  
 [![Project Video](https://img.youtube.com/vi/MVDLl5eAIYU/0.jpg)](https://www.youtube.com/watch?v=MVDLl5eAIYU)  
 
----
 ## Poster
 - [Project Poster (PDF)](SIGHT/Final%20Demo%20Poster/Sight_poster_30_05_2024_05-17.pdf)
 
